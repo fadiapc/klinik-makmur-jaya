@@ -18,6 +18,7 @@ import re
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
+from datetime import datetime
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -189,9 +190,9 @@ class UserOut(BaseModel):
     role: RoleOut
     is_verified: bool
     is_active: bool
-    last_login_at: Optional[str] = Field(
+    last_login_at: Optional[datetime] = Field(
         default=None,
-        description="ISO-8601 UTC timestamp of most recent login",
+        description="UTC timestamp of most recent login",
     )
 
     model_config = {"from_attributes": True}

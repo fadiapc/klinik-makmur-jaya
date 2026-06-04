@@ -42,19 +42,16 @@ logger = logging.getLogger(__name__)
 # schemes list order matters: first scheme is the active hasher; the rest are
 # legacy schemes that verify() can still validate (useful for migrations).
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["argon2"],
     deprecated="auto",
-    bcrypt__rounds=12,  # OWASP recommended minimum: 10; 12 is a safe balance
 )
 
 
 def hash_password(plain_password: str) -> str:
     """
-    Return the bcrypt hash of *plain_password*.
+    Return the argon2 hash of *plain_password*.
 
-    Uses 12 salt rounds — computationally expensive enough to resist offline
-    brute-force while remaining fast enough for a real-time login flow
-    (≈ 200–300 ms on commodity hardware).
+    Uses Argon2id which is the modern recommendation.
     """
     return pwd_context.hash(plain_password)
 

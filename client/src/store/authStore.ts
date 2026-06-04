@@ -1,11 +1,19 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-interface User {
+interface Role {
   id: number
+  name: string
+}
+
+interface User {
+  uuid: string
   email: string
-  full_name: string
-  role: string
+  name: string
+  role: Role
+  is_verified: boolean
+  is_active: boolean
+  last_login_at: string | null
 }
 
 interface AuthState {

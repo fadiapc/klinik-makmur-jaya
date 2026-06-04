@@ -24,15 +24,9 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Create FormData as expected by OAuth2PasswordRequestForm
-      const formData = new URLSearchParams()
-      formData.append("username", email)
-      formData.append("password", password)
-
-      const response = await api.post("/auth/login", formData, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+      const response = await api.post("/auth/login", {
+        email: email,
+        password: password,
       })
 
       const { access_token, user } = response.data
@@ -41,7 +35,7 @@ export default function LoginPage() {
       login(access_token, user)
       
       // Navigate based on role
-      if (user.role === "pasien") {
+      if (user.role.name === "pasien") {
         navigate("/catalog")
       } else {
         navigate("/dashboard")

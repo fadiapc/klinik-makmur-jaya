@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Link } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
-import { LogOut, LayoutDashboard, Package, ShoppingCart } from "lucide-react"
+import { LogOut, LayoutDashboard, Package, ShoppingCart, ExternalLink } from "lucide-react"
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -13,27 +13,34 @@ export default function ProtectedLayout() {
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r flex flex-col shadow-sm">
-        <div className="h-16 flex items-center px-6 border-b">
-          <Link to="/catalog" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-            Makmur Jaya
+        <div className="py-4 flex flex-col justify-center px-6 border-b h-20">
+          <Link to="/dashboard" className="font-bold leading-tight">
+            <span className="block text-slate-900 text-sm">Klinik</span>
+            <span className="block text-primary text-xl">Makmur Jaya</span>
           </Link>
         </div>
         
         <div className="p-4 border-b bg-slate-50/50">
-          <p className="text-sm font-medium text-slate-900">{user?.full_name}</p>
-          <p className="text-xs text-slate-500 capitalize">{user?.role} Role</p>
+          <p className="text-sm font-medium text-slate-900">{user?.name}</p>
+          <p className="text-xs text-slate-500 capitalize">{user?.role?.name} Role</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
+          <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-md bg-primary/10 text-primary text-sm font-medium">
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
-          <Link to="/catalog" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm font-medium transition-colors">
+          <Link to="/admin/products" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm font-medium transition-colors">
             <Package className="w-4 h-4" />
-            Katalog Obat
+            Kelola Produk
           </Link>
-          {/* Add more links based on roles later */}
+          
+          <div className="pt-4 mt-4 border-t border-slate-200">
+            <a href="/catalog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-primary hover:bg-slate-100 text-sm font-medium transition-colors">
+              <ExternalLink className="w-4 h-4" />
+              Lihat Toko
+            </a>
+          </div>
         </nav>
 
         <div className="p-4 border-t">

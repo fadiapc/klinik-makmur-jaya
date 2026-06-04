@@ -9,22 +9,23 @@ export default function PublicLayout() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/catalog" className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-            Makmur Jaya
+          <Link to="/catalog" className="text-xl font-bold">
+            <span className="text-slate-900">Klinik </span>
+            <span className="text-primary">Makmur Jaya</span>
           </Link>
           
           <nav className="flex items-center gap-4">
-            <Link to="/catalog" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">
+            <Link to="/catalog" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
               Katalog
             </Link>
             
             {isAuthenticated ? (
               <div className="flex items-center gap-4 ml-4">
-                <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-blue-600">
+                <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-primary">
                   Dashboard
                 </Link>
                 <div className="h-4 w-px bg-slate-200"></div>
-                <span className="text-sm font-medium text-slate-900">{user?.full_name}</span>
+                <span className="text-sm font-medium text-slate-900">{user?.name}</span>
                 <button 
                   onClick={() => logout()}
                   className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
@@ -36,7 +37,7 @@ export default function PublicLayout() {
             ) : (
               <Link 
                 to="/login" 
-                className="ml-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-blue-600 text-white hover:bg-blue-700 h-10 py-2 px-4 shadow-sm"
+                className="ml-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4 shadow-sm"
               >
                 Login
               </Link>

@@ -153,8 +153,6 @@ async def list_products(
     # Sorting
     sort_by: ProductSortField = Query(default=ProductSortField.NAME),
     sort_order: SortOrder = Query(default=SortOrder.ASC),
-    # Auth
-    current_user: User = Depends(get_current_active_user),
     service: ProductService = Depends(_get_service),
 ) -> PaginatedResponse[ProductOut]:
     """Paginated, filterable, sortable product list."""
@@ -292,7 +290,6 @@ async def get_import_status(
 )
 async def get_product(
     product_id: int,
-    current_user: User = Depends(get_current_active_user),
     service: ProductService = Depends(_get_service),
 ) -> ProductOut:
     """Fetch a single product with all pharmaceutical details."""
