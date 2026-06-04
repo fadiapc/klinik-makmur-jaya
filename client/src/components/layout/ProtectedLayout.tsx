@@ -1,6 +1,6 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
-import { LogOut, LayoutDashboard, Package, ShoppingCart, ExternalLink } from "lucide-react"
+import { LogOut, LayoutDashboard, Package, ExternalLink, Users } from "lucide-react"
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -35,6 +35,13 @@ export default function ProtectedLayout() {
             <Package className="w-4 h-4" />
             Kelola Produk
           </Link>
+          
+          {user?.role?.name?.toLowerCase() === 'admin' && (
+            <Link to="/admin/users" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname.startsWith('/admin/users') ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
+              <Users className="w-4 h-4" />
+              Kelola Pengguna
+            </Link>
+          )}
           
           <div className="pt-4 mt-4 border-t border-slate-200">
             <a href="/catalog" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-500 hover:text-primary hover:bg-slate-100 text-sm font-medium transition-colors">

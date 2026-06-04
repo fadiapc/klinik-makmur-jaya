@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1 import auth_routes, dashboard_routes, order_routes, product_routes
+from app.api.v1 import auth_routes, dashboard_routes, order_routes, product_routes, user_routes
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.security import limiter
@@ -144,6 +144,7 @@ app.mount(
 
 # Auth & Security module (PRD Section 4.1)
 app.include_router(auth_routes.router, prefix="/api/v1")
+app.include_router(user_routes.router, prefix="/api/v1")
 
 # Products management module (PRD Sections 4.3 & 4.5)
 app.include_router(product_routes.router, prefix="/api/v1")

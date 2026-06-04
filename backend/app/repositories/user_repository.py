@@ -15,13 +15,14 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.models import Role, User
+from app.schemas.user import UserFilterParams
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,44 @@ class UserRepository:
         )
         return result.scalar_one_or_none() is not None
 
+    async def list_users(
+        self, filters: UserFilterParams, page: int, page_size: int
+    ) -> Tuple[list[User], int]:
+        """Paginated list of users with search and filtering."""
+        conditions = []
+        
+        if filters.is_active is not None:
+            conditions.append(User.is_active == filters.is_active)
+        if filters.role_id is not None:
+            conditions.append(User.role_id == filters.role_id)
+            
+        if filters.q:
+            search_term = filters.q.strip()
+            ilike_term = f"%{search_term}%"
+            conditions.append(
+                or_(
+                    User.name.ilike(ilike_term),
+                    User.email.ilike(ilike_term),
+                    User.phone.ilike(ilike_term),
+                    func.word_similarity(search_term, User.name) > 0.4,
+                )
+            )
+
+        stmt = select(User).options(selectinload(User.role))
+        if conditions:
+            stmt = stmt.where(*conditions)
+
+        # Count total matches
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = await self.db.scalar(count_stmt) or 0
+
+        # Paginate
+        stmt = stmt.order_by(User.id.desc()).offset((page - 1) * page_size).limit(page_size)
+        result = await self.db.execute(stmt)
+        users = list(result.scalars().all())
+
+        return users, total
+
     # ── Role helpers ──────────────────────────────────────────────────────────
 
     async def get_role_by_name(self, role_name: str) -> Optional[Role]:
@@ -99,6 +138,11 @@ class UserRepository:
             select(Role).where(Role.name == role_name.lower().strip())
         )
         return result.scalar_one_or_none()
+
+    async def list_roles(self) -> list[Role]:
+        """Fetch all available roles."""
+        result = await self.db.execute(select(Role).order_by(Role.id))
+        return list(result.scalars().all())
 
     # ── Writes ────────────────────────────────────────────────────────────────
 
@@ -137,6 +181,16 @@ class UserRepository:
             user.email,
             user.role_id,
         )
+        return user
+
+    async def update(self, user: User, update_data: dict) -> User:
+        """Update user fields."""
+        for field, value in update_data.items():
+            setattr(user, field, value)
+            
+        self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user, attribute_names=["role"])
         return user
 
     async def update_last_login(self, user: User) -> User:

@@ -107,7 +107,6 @@ export const checkImportStatus = async (jobId: string) => {
 export const uploadProductImage = async (productId: number, file: File) => {
   const formData = new FormData()
   formData.append("file", file)
-  const token = localStorage.getItem("auth-storage") // Let's check how auth is stored... wait, Zustand default is usually localStorage "auth-storage"
   let authHeader = ""
   try {
     const authState = JSON.parse(localStorage.getItem("auth-storage") || "{}")

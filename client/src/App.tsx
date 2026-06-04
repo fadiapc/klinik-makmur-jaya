@@ -5,6 +5,7 @@ import LoginPage from "./pages/auth/LoginPage"
 import CatalogPage from "./pages/public/CatalogPage"
 import DashboardPage from "./pages/dashboard/DashboardPage"
 import AdminProductsPage from "./pages/dashboard/AdminProductsPage"
+import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
 
 function App() {
   return (
@@ -17,10 +18,11 @@ function App() {
           <Route path="/catalog" element={<CatalogPage />} />
         </Route>
         
-        {/* Protected Routes */}
+        {/* Protected Routes (Dashboard) */}
         <Route element={<ProtectedLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin/products" element={<AdminProductsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
