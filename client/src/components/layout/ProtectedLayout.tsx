@@ -1,9 +1,10 @@
-import { Navigate, Outlet, Link } from "react-router-dom"
+import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { LogOut, LayoutDashboard, Package, ShoppingCart, ExternalLink } from "lucide-react"
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
+  const location = useLocation()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -26,11 +27,11 @@ export default function ProtectedLayout() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          <Link to="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-md bg-primary/10 text-primary text-sm font-medium">
+          <Link to="/dashboard" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
-          <Link to="/admin/products" className="flex items-center gap-3 px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 text-sm font-medium transition-colors">
+          <Link to="/admin/products" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname.startsWith('/admin/products') ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
             <Package className="w-4 h-4" />
             Kelola Produk
           </Link>

@@ -110,12 +110,14 @@ class ProductRepository:
             conditions.append(Product.is_active == filters.is_active)
 
         if filters.q:
-            search_term = f"%{filters.q.strip()}%"
+            search_term = filters.q.strip()
+            ilike_term = f"%{search_term}%"
             conditions.append(
                 or_(
-                    Product.name.ilike(search_term),
-                    Product.sku.ilike(search_term),
-                    Product.description.ilike(search_term),
+                    Product.name.ilike(ilike_term),
+                    Product.sku.ilike(ilike_term),
+                    Product.description.ilike(ilike_term),
+                    func.word_similarity(search_term, Product.name) > 0.4,  # pg_trgm word similarity with lower threshold for typos
                 )
             )
 
@@ -228,6 +230,7 @@ class ProductRepository:
         )
         self.db.add(product)
         await self.db.flush()
+        await self.db.refresh(product)
         await self.db.refresh(product, attribute_names=["category", "supplier"])
         return product
 
@@ -247,6 +250,7 @@ class ProductRepository:
                 setattr(product, field, value)
         self.db.add(product)
         await self.db.flush()
+        await self.db.refresh(product)
         await self.db.refresh(product, attribute_names=["category", "supplier"])
         return product
 
