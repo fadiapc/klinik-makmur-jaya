@@ -23,7 +23,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from app.api.v1 import auth_routes, dashboard_routes, order_routes, product_routes, user_routes
+from app.api.v1 import auth_routes, dashboard_routes, order_routes, product_routes, user_routes, audit_routes
 from app.core.config import settings
 from app.core.database import close_db, init_db
 from app.core.security import limiter
@@ -155,6 +155,9 @@ app.include_router(order_routes.router, prefix="/api/v1")
 # Dashboard & Reporting (Real-time and Background Tasks)
 app.include_router(dashboard_routes.router, prefix="/api/v1")
 app.include_router(dashboard_routes.ws_router)
+
+# Audit Log (Admin only)
+app.include_router(audit_routes.router, prefix="/api/v1")
 
 # Future routers (added per phase):
 # from app.api.v1 import stock_routes

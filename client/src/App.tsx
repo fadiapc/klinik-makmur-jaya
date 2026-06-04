@@ -6,6 +6,7 @@ import CatalogPage from "./pages/public/CatalogPage"
 import DashboardPage from "./pages/dashboard/DashboardPage"
 import AdminProductsPage from "./pages/dashboard/AdminProductsPage"
 import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
+import AdminAuditLogPage from "./pages/dashboard/AdminAuditLogPage"
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/admin/products" element={<AdminProductsPage />} />
           <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/audit" element={<AdminAuditLogPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
