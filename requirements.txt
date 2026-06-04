@@ -1,0 +1,55 @@
+# Generic / utility packages
+python-dotenv>=1.0.0
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+
+# FastAPI core
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+
+# SQLAlchemy async stack
+sqlalchemy[asyncio]>=2.0.30
+asyncpg>=0.29.0          # async PostgreSQL driver
+
+# Alembic (database migrations)
+alembic>=1.13.0
+psycopg2-binary>=2.9.9   # sync driver required by Alembic env.py
+
+# Security
+passlib[bcrypt]>=1.7.4
+PyJWT>=2.8.0               # JWT encoding/decoding (pyjwt — NOT python-jose)
+argon2-cffi>=23.1.0        # Argon2 alternative to bcrypt
+
+# Rate limiting
+slowapi>=0.1.9
+
+# CSRF
+fastapi-csrf-protect>=0.3.3
+
+# HTTP security headers
+secure>=0.3.0
+
+# Email
+fastapi-mail>=1.4.1
+
+# Redis / Celery
+redis>=5.0.4
+celery[redis]>=5.3.6
+
+# File / image handling
+Pillow>=10.3.0
+
+# Data processing (batch import)
+pandas>=2.2.2
+openpyxl>=3.1.2
+
+# PDF generation
+weasyprint>=62.0
+
+# WebSocket support is built into FastAPI / Starlette — no extra package needed
+
+# Testing
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+httpx>=0.27.0            # async test client for FastAPI

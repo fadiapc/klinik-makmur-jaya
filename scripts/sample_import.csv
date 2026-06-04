@@ -1,0 +1,6 @@
+sku,name,category_id,supplier_id,price,description,composition,dosage,side_effects,requires_prescription,min_stock_threshold,image_url
+OBT-AMX-500,Amoxicillin 500mg,1,1,15000,"Antibiotic for bacterial infections","Amoxicillin trihydrate 500mg","1 capsule 3x daily","Nausea, rash, diarrhea",true,20,
+OBT-PCT-500,Paracetamol 500mg,2,1,3500,"Analgesic and antipyretic","Paracetamol 500mg","1-2 tablets every 4-6 hours","Rarely: allergic reaction",false,50,
+VIT-C-1000,Vitamin C 1000mg,3,2,25000,"Immune system booster","Ascorbic acid 1000mg","1 tablet daily","Stomach upset at high doses",false,30,
+OBT-AMX-250,Amoxicillin 250mg Syrup,1,1,12000,"Antibiotic syrup for children","Amoxicillin trihydrate 250mg/5ml","Dosage per doctor's advice","Nausea, rash",true,15,
+AKS-MSK-N95,Masker N95 Medical Grade,4,3,45000,"Medical grade respirator mask","Non-woven polypropylene","Single use","",false,100,
