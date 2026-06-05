@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import mimetypes
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 from typing import Optional
@@ -70,34 +70,24 @@ class OrderService:
         """
         Process a new order checkout.
 
-        Flow:
-          1. Resolve customer and cashier roles.
-          2. Pre-fetch and validate all requested products.
-          3. Perform pessimistic FIFO stock deduction for every item.
-          4. Calculate financial totals (Subtotal, 11% PPN Tax).
-          5. Generate Order Code.
-          6. Insert Order and OrderItems.
-          7. Write Audit Log.
-          8. Return OrderOut with FIFO deduction details.
+        Status Assignment:
+          - Jika ada obat keras → MENUNGGU_VERIFIKASI_RESEP
+          - Jika semua obat bebas → MENUNGGU_PEMBAYARAN (+ set payment_deadline 24h)
 
         Raises:
             HTTP 400 — Insufficient stock or invalid products.
         """
         # 1. Resolve user contexts
         if current_user.role.name == "pasien":
-            # Online self-checkout
             order_type = OrderType.ONLINE
             customer_id = current_user.id
             cashier_id = None
         else:
-            # POS / Counter checkout
             order_type = OrderType.COUNTER
             cashier_id = current_user.id
-            # Use provided customer_id, or fallback to the cashier's own ID as a placeholder
             customer_id = data.customer_id if data.customer_id else current_user.id
 
         # 2. Pre-fetch and validate products
-        # Using a dictionary to avoid duplicate queries if they were allowed (handled by schema, but safe)
         products_map = {}
         for item in data.items:
             product = await self.repo.get_product_by_id(item.product_id)
@@ -163,7 +153,17 @@ class OrderService:
         tax = (taxable_amount * tax_rate).quantize(Decimal("0.00"))
         grand_total = taxable_amount + tax
 
-        # 5. Order Header
+        # 5. Determine initial status
+        initial_status = (
+            OrderStatus.MENUNGGU_VERIFIKASI_RESEP
+            if requires_rx_flag
+            else OrderStatus.MENUNGGU_PEMBAYARAN
+        )
+        payment_deadline = None
+        if not requires_rx_flag:
+            payment_deadline = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        # 6. Create Order
         order_code = await self.repo.generate_order_code()
 
         order = await self.repo.create_order(
@@ -177,9 +177,11 @@ class OrderService:
             tax=tax,
             grand_total=grand_total,
             notes=data.notes,
+            initial_status=initial_status,
+            payment_deadline=payment_deadline,
         )
 
-        # 6. Order Items
+        # 7. Order Items
         await self.repo.bulk_create_order_items(order.id, line_items_data)
 
         # Refresh order to fetch the relationships eagerly
@@ -187,7 +189,7 @@ class OrderService:
         if not order:
             raise RuntimeError("Order creation failed unexpectedly.")
 
-        # 7. Audit Log
+        # 8. Audit Log
         await log_audit(
             db=self.db,
             user_id=current_user.id,
@@ -199,6 +201,7 @@ class OrderService:
                 "order_code": order_code,
                 "grand_total": str(grand_total),
                 "items_count": len(line_items_data),
+                "status": initial_status.value,
             },
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
@@ -211,8 +214,8 @@ class OrderService:
         order_out.stock_deductions = deductions_audit
 
         logger.info(
-            "Checkout successful | code=%s total=%s items=%d user_id=%d",
-            order_code, str(grand_total), len(line_items_data), current_user.id
+            "Checkout successful | code=%s total=%s items=%d user_id=%d status=%s",
+            order_code, str(grand_total), len(line_items_data), current_user.id, initial_status.value
         )
 
         return order_out
@@ -225,7 +228,7 @@ class OrderService:
         current_user: User,
     ) -> OrderOut:
         """
-        Fetch a single order. Pasien can only fetch their own orders.
+        Fetch a single order. Pelanggan can only fetch their own orders.
         """
         order = await self.repo.get_by_id(order_id)
         if not order:
@@ -259,7 +262,7 @@ class OrderService:
         status_filter: Optional[OrderStatus] = None,
     ) -> PaginatedResponse[OrderOut]:
         """
-        List orders. Pasien only sees their own. Admins/Staff see all.
+        List orders. Pelanggan only sees their own. Admins/Staff see all.
         """
         if current_user.role.name == "pasien":
             orders, total = await self.repo.list_for_user(
@@ -297,7 +300,7 @@ class OrderService:
         request: Request,
     ) -> OrderOut:
         """
-        Advance order lifecycle status (e.g. pending -> processing).
+        Advance order lifecycle status.
         """
         order = await self.repo.get_by_id(order_id)
         if not order:
@@ -440,6 +443,10 @@ class OrderService:
     ) -> OrderOut:
         """
         Apoteker reviews the prescription (approved/rejected).
+
+        Auto-transition:
+          - APPROVED → order.status = MENUNGGU_PEMBAYARAN + payment_deadline = now+24h
+          - REJECTED → order.status = DIBATALKAN
         """
         order = await self.repo.get_by_id(order_id)
         if not order:
@@ -461,7 +468,7 @@ class OrderService:
                 detail=f"Prescription has already been {prescription.status.value}.",
             )
 
-        new_status = (
+        new_rx_status = (
             PrescriptionStatus.APPROVED if data.action == "approved"
             else PrescriptionStatus.REJECTED
         )
@@ -469,10 +476,20 @@ class OrderService:
         prescription = await self.repo.update_prescription_review(
             prescription,
             pharmacist_id=current_user.id,
-            new_status=new_status,
+            new_status=new_rx_status,
             rejection_reason=data.rejection_reason,
             reviewed_at=datetime.now(timezone.utc),
         )
+
+        # Auto-transition order status
+        if new_rx_status == PrescriptionStatus.APPROVED:
+            new_order_status = OrderStatus.MENUNGGU_PEMBAYARAN
+            payment_deadline = datetime.now(timezone.utc) + timedelta(hours=24)
+            await self.repo.update_status(order, new_order_status)
+            await self.repo.update_payment_deadline(order, payment_deadline)
+        else:
+            new_order_status = OrderStatus.DIBATALKAN
+            await self.repo.update_status(order, new_order_status)
 
         await log_audit(
             db=self.db,
@@ -481,7 +498,6 @@ class OrderService:
             module="ORDER",
             target_type="Prescription",
             target_id=prescription.id,
-            new_value={"status": new_status.value, "reason": data.rejection_reason},
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("user-agent"),
         )

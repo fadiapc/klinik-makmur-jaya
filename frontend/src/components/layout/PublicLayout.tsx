@@ -39,7 +39,7 @@ export default function PublicLayout() {
                 }`}
               >
                 <ClipboardList className="w-4 h-4" />
-                <span className="hidden md:block">Pesanan Saya</span>
+                <span className="hidden md:block">Riwayat Pesanan</span>
               </Link>
             )}
 

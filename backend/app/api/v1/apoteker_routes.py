@@ -175,7 +175,7 @@ async def get_pending_prescriptions(
             selectinload(Prescription.order).selectinload(Order.items).selectinload(OrderItem.product),
             selectinload(Prescription.order).selectinload(Order.customer),
         )
-        .order_by(Prescription.uploaded_at.asc())
+        .order_by(Prescription.created_at.asc())
         .limit(limit)
     )
 
@@ -188,7 +188,7 @@ async def get_pending_prescriptions(
         drug_names = ", ".join(
             item.product.name for item in order.items if item.product
         ) if order and order.items else "-"
-        customer_name = order.customer.name if order and order.customer else order.customer_name if order else "-"
+        customer_name = order.customer.name if order and order.customer else "-"
         items.append(
             PendingPrescriptionItem(
                 order_id=order.id,
@@ -196,7 +196,7 @@ async def get_pending_prescriptions(
                 customer_name=customer_name,
                 drug_names=drug_names,
                 image_url=p.image_url,
-                uploaded_at=p.uploaded_at.isoformat() if p.uploaded_at else "",
+                uploaded_at=p.created_at.isoformat() if p.created_at else "",
             )
         )
     return items
@@ -280,7 +280,7 @@ async def get_prescription_history(
             selectinload(Prescription.order).selectinload(Order.customer),
             selectinload(Prescription.pharmacist),
         )
-        .order_by(desc(Prescription.uploaded_at))
+        .order_by(desc(Prescription.created_at))
     )
 
     # Status filter
@@ -317,7 +317,7 @@ async def get_prescription_history(
         )
         customer_name = (
             order.customer.name if order and order.customer
-            else order.customer_name if order else "-"
+            else "-"
         )
         pharmacist_name = p.pharmacist.name if p.pharmacist else None
 

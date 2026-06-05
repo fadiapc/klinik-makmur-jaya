@@ -210,6 +210,8 @@ class OrderRepository:
         tax: Decimal,
         grand_total: Decimal,
         notes: Optional[str],
+        initial_status: Optional[OrderStatus] = None,
+        payment_deadline: Optional[datetime] = None,
     ) -> Order:
         """Insert the order header row and flush to get the assigned id."""
         order = Order(
@@ -224,6 +226,10 @@ class OrderRepository:
             grand_total=grand_total,
             notes=notes,
         )
+        if initial_status is not None:
+            order.status = initial_status
+        if payment_deadline is not None:
+            order.payment_deadline = payment_deadline
         self.db.add(order)
         await self.db.flush()   # assigns order.id from DB IDENTITY column
         return order
@@ -425,3 +431,42 @@ class OrderRepository:
             )
         )
         return result.scalar_one_or_none()
+
+    # ── Payment & Tracking updates ────────────────────────────────────────────
+
+    async def update_payment_proof(self, order: Order, url: Optional[str]) -> Order:
+        """Save or clear the customer-uploaded payment proof URL."""
+        order.payment_proof_url = url
+        self.db.add(order)
+        await self.db.flush()
+        return order
+
+    async def update_tracking(self, order: Order, tracking_number: str) -> Order:
+        """Save the courier tracking number."""
+        order.tracking_number = tracking_number
+        self.db.add(order)
+        await self.db.flush()
+        return order
+
+    async def update_payment_deadline(self, order: Order, deadline: datetime) -> Order:
+        """Set the payment deadline for auto-cancel background job."""
+        order.payment_deadline = deadline
+        self.db.add(order)
+        await self.db.flush()
+        return order
+
+    async def list_overdue_orders(self) -> list[Order]:
+        """Fetch all orders past their payment_deadline for auto-cancel job."""
+        from sqlalchemy import and_
+        now = datetime.now(timezone.utc)
+        result = await self.db.execute(
+            select(Order)
+            .where(
+                and_(
+                    Order.status == OrderStatus.MENUNGGU_PEMBAYARAN,
+                    Order.payment_deadline != None,
+                    Order.payment_deadline < now,
+                )
+            )
+        )
+        return list(result.scalars().all())

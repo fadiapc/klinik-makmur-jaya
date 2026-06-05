@@ -89,7 +89,7 @@ class OrderStatusUpdate(BaseModel):
 
     status: OrderStatus = Field(
         ...,
-        description="Target status: confirmed | processing | ready | completed | cancelled",
+        description="Target status: menunggu_pembayaran | menunggu_konfirmasi_kasir | diproses | dikirim | selesai | dibatalkan",
     )
     notes: Optional[str] = Field(
         default=None,
@@ -195,6 +195,18 @@ class OrderOut(BaseModel):
     grand_total: Decimal
     payment_method: str
     payment_status: str
+    payment_proof_url: Optional[str] = Field(
+        default=None,
+        description="URL foto bukti transfer yang diupload pelanggan"
+    )
+    tracking_number: Optional[str] = Field(
+        default=None,
+        description="Nomor resi kurir yang diinput Apoteker"
+    )
+    payment_deadline: Optional[str] = Field(
+        default=None,
+        description="ISO-8601 deadline pembayaran (auto-cancel jika terlewat)"
+    )
     notes: Optional[str]
     requires_prescription: bool = Field(
         description="True if any line item is a prescription-required drug"

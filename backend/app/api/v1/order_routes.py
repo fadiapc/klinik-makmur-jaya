@@ -2,12 +2,17 @@
 order_routes.py — FastAPI router for the Orders module.
 
 Implements checkout, FIFO stock deduction, and prescription workflows:
-  POST   /api/v1/orders/checkout             Place a new order
-  GET    /api/v1/orders                      List orders (isolated by role)
-  GET    /api/v1/orders/{id}                 Get single order
-  PATCH  /api/v1/orders/{id}/status          Update order lifecycle status
-  POST   /api/v1/orders/{id}/prescription    Upload prescription image (1:1)
-  PATCH  /api/v1/orders/{id}/prescription/review  Pharmacist review
+  POST   /api/v1/orders/checkout                     Place a new order
+  GET    /api/v1/orders                              List orders (isolated by role)
+  GET    /api/v1/orders/{id}                         Get single order
+  PATCH  /api/v1/orders/{id}/status                  Update order lifecycle status
+  POST   /api/v1/orders/{id}/prescription            Upload prescription image (1:1)
+  PATCH  /api/v1/orders/{id}/prescription/review     Pharmacist review
+  POST   /api/v1/orders/{id}/payment-proof           Pelanggan upload bukti transfer
+  POST   /api/v1/orders/{id}/confirm-received        Pelanggan konfirmasi terima pesanan
+  POST   /api/v1/orders/{id}/kasir/confirm           Kasir konfirmasi dana masuk
+  POST   /api/v1/orders/{id}/kasir/reject            Kasir tolak bukti transfer
+  POST   /api/v1/orders/{id}/ship                    Apoteker kirim pesanan + input resi
 """
 
 from __future__ import annotations
@@ -16,6 +21,7 @@ from typing import Optional
 
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     File,
     Query,
@@ -23,11 +29,13 @@ from fastapi import (
     UploadFile,
     status,
 )
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import (
     RequireAdminOrApoteker,
+    RequireAdminOrKasir,
     RequireApoteker,
     RequireStaff,
     get_current_active_user,
@@ -53,6 +61,18 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> OrderService:
     return OrderService(db)
 
 
+# ── Request schemas ────────────────────────────────────────────────────────────
+
+class KasirRejectRequest(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=500,
+                        description="Alasan penolakan pembayaran (min. 5 karakter)")
+
+
+class ShipOrderRequest(BaseModel):
+    tracking_number: str = Field(..., min_length=3, max_length=100,
+                                 description="Nomor resi pengiriman dari kurir")
+
+
 # ── Checkout ──────────────────────────────────────────────────────────────────
 
 
@@ -63,10 +83,9 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> OrderService:
     summary="Checkout cart and deduct stock via FIFO",
     description=(
         "Processes an order checkout.\n\n"
-        "**Features**:\n"
-        "1. Deducts inventory using a pessimistic FIFO lock (closest expiry first).\n"
-        "2. Fails atomically if stock is insufficient.\n"
-        "3. Flags the response if any item requires a prescription.\n\n"
+        "**Status awal**:\n"
+        "• Jika ada obat keras → `menunggu_verifikasi_resep`\n"
+        "• Jika semua obat bebas → `menunggu_pembayaran` (deadline 24 jam)\n\n"
         "**Role Behavior**:\n"
         "• `Pasien`: Order placed as online. `customer_id` is ignored.\n"
         "• `Kasir/Admin`: Order placed as counter. Provide `customer_id` if known."
@@ -118,7 +137,7 @@ async def get_order(
     current_user: User = Depends(get_current_active_user),
     service: OrderService = Depends(_get_service),
 ) -> OrderOut:
-    """Fetch order details. Pasien isolation enforced."""
+    """Fetch order details. Pelanggan isolation enforced."""
     return await service.get_order(order_id, current_user)
 
 
@@ -129,7 +148,7 @@ async def get_order(
     "/{order_id}/status",
     response_model=OrderOut,
     status_code=status.HTTP_200_OK,
-    summary="Update order status",
+    summary="Update order status (manual override)",
     description="Advance the lifecycle of an order. **Requires role:** Admin, Apoteker, or Kasir.",
 )
 async def update_order_status(
@@ -173,7 +192,12 @@ async def upload_prescription(
     response_model=OrderOut,
     status_code=status.HTTP_200_OK,
     summary="Review prescription (Apoteker only)",
-    description="Pharmacist reviews the uploaded prescription (approve/reject).",
+    description=(
+        "Pharmacist reviews the uploaded prescription (approve/reject).\n\n"
+        "**Auto-transition**:\n"
+        "• Approve → order status = `menunggu_pembayaran` (deadline 24 jam)\n"
+        "• Reject → order status = `dibatalkan`"
+    ),
 )
 async def review_prescription(
     order_id: int,
@@ -184,3 +208,120 @@ async def review_prescription(
 ) -> OrderOut:
     """Pharmacist approves or rejects a prescription."""
     return await service.review_prescription(order_id, data, current_user, request)
+
+
+# ── Payment Proof ─────────────────────────────────────────────────────────────
+
+
+@router.post(
+    "/{order_id}/payment-proof",
+    response_model=OrderOut,
+    status_code=status.HTTP_200_OK,
+    summary="Upload bukti transfer (Pelanggan)",
+    description=(
+        "Pelanggan mengunggah foto bukti transfer bank.\n"
+        "Hanya bisa dilakukan saat status pesanan = `menunggu_pembayaran`.\n"
+        "Status otomatis berubah ke `menunggu_konfirmasi_kasir` setelah upload berhasil.\n"
+        "Max size: 5 MB (JPEG/PNG/WebP)."
+    ),
+)
+async def upload_payment_proof(
+    order_id: int,
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+    service: OrderService = Depends(_get_service),
+) -> OrderOut:
+    """Upload payment proof photo."""
+    return await service.upload_payment_proof(order_id, file, current_user, request)
+
+
+# ── Kasir: Konfirmasi / Tolak Pembayaran ──────────────────────────────────────
+
+
+@router.post(
+    "/{order_id}/kasir/confirm",
+    response_model=OrderOut,
+    status_code=status.HTTP_200_OK,
+    summary="Kasir konfirmasi dana masuk (UC-K04)",
+    description=(
+        "Kasir mengkonfirmasi bahwa bukti transfer valid dan dana sudah masuk rekening klinik.\n"
+        "Status berubah: `menunggu_konfirmasi_kasir` → `diproses`."
+    ),
+)
+async def kasir_confirm_payment(
+    order_id: int,
+    request: Request,
+    current_user: User = Depends(RequireAdminOrKasir),
+    service: OrderService = Depends(_get_service),
+) -> OrderOut:
+    """Kasir confirms payment received."""
+    return await service.kasir_confirm_payment(order_id, current_user, request)
+
+
+@router.post(
+    "/{order_id}/kasir/reject",
+    response_model=OrderOut,
+    status_code=status.HTTP_200_OK,
+    summary="Kasir tolak bukti transfer (UC-K04 Unhappy Path)",
+    description=(
+        "Kasir menolak bukti transfer karena tidak valid/dana belum masuk.\n"
+        "Status kembali ke `menunggu_pembayaran` agar pelanggan bisa upload ulang."
+    ),
+)
+async def kasir_reject_payment(
+    order_id: int,
+    request: Request,
+    data: KasirRejectRequest,
+    current_user: User = Depends(RequireAdminOrKasir),
+    service: OrderService = Depends(_get_service),
+) -> OrderOut:
+    """Kasir rejects payment proof."""
+    return await service.kasir_reject_payment(order_id, data.reason, current_user, request)
+
+
+# ── Apoteker: Kirim Pesanan ───────────────────────────────────────────────────
+
+
+@router.post(
+    "/{order_id}/ship",
+    response_model=OrderOut,
+    status_code=status.HTTP_200_OK,
+    summary="Kirim pesanan + input resi (Apoteker, UC-A05)",
+    description=(
+        "Apoteker memasukkan nomor resi setelah pesanan diserahkan ke kurir.\n"
+        "Status berubah: `diproses` → `dikirim`."
+    ),
+)
+async def ship_order(
+    order_id: int,
+    request: Request,
+    data: ShipOrderRequest,
+    current_user: User = Depends(RequireAdminOrApoteker),
+    service: OrderService = Depends(_get_service),
+) -> OrderOut:
+    """Apoteker ships the order with tracking number."""
+    return await service.apoteker_ship_order(order_id, data.tracking_number, current_user, request)
+
+
+# ── Pelanggan: Konfirmasi Diterima ────────────────────────────────────────────
+
+
+@router.post(
+    "/{order_id}/confirm-received",
+    response_model=OrderOut,
+    status_code=status.HTTP_200_OK,
+    summary="Pelanggan konfirmasi pesanan diterima",
+    description=(
+        "Pelanggan mengkonfirmasi bahwa paket sudah diterima di rumah.\n"
+        "Status berubah: `dikirim` → `selesai`."
+    ),
+)
+async def confirm_received(
+    order_id: int,
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+    service: OrderService = Depends(_get_service),
+) -> OrderOut:
+    """Customer confirms order received."""
+    return await service.confirm_received(order_id, current_user, request)

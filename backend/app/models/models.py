@@ -61,14 +61,24 @@ from app.core.database import Base
 
 
 class OrderStatus(str, enum.Enum):
-    """Lifecycle states of an order."""
+    """
+    Lifecycle states of an order — 7 status sesuai spesifikasi operasional klinik.
 
-    PENDING = "pending"
-    CONFIRMED = "confirmed"
-    PROCESSING = "processing"
-    READY = "ready"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    Alur Normal:
+      MENUNGGU_VERIFIKASI_RESEP → MENUNGGU_PEMBAYARAN → MENUNGGU_KONFIRMASI_KASIR
+      → DIPROSES → DIKIRIM → SELESAI
+
+    Alur Gagal (terminal):
+      DIBATALKAN
+    """
+
+    MENUNGGU_VERIFIKASI_RESEP = "menunggu_verifikasi_resep"
+    MENUNGGU_PEMBAYARAN = "menunggu_pembayaran"
+    MENUNGGU_KONFIRMASI_KASIR = "menunggu_konfirmasi_kasir"
+    DIPROSES = "diproses"
+    DIKIRIM = "dikirim"
+    SELESAI = "selesai"
+    DIBATALKAN = "dibatalkan"
 
 
 class OrderType(str, enum.Enum):
@@ -733,11 +743,11 @@ class Order(Base):
 
     # ── Status enums ──────────────────────────────────────────────────────────
     status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus, name="order_status_enum", create_type=True),
+        Enum(OrderStatus, name="order_status_enum", create_type=True, values_callable=lambda obj: [e.value for e in obj]),
         nullable=False,
-        server_default=OrderStatus.PENDING.value,
+        server_default=OrderStatus.MENUNGGU_PEMBAYARAN.value,
         index=True,
-        comment="Current lifecycle status of the order",
+        comment="Current lifecycle status of the order (7-status lifecycle)",
     )
     order_type: Mapped[OrderType] = mapped_column(
         Enum(OrderType, name="order_type_enum", create_type=True),
@@ -787,6 +797,27 @@ class Order(Base):
         Text,
         nullable=True,
         comment="Free-text order notes from the customer or cashier",
+    )
+
+    # ── Payment proof (upload by customer) ───────────────────────────────────
+    payment_proof_url: Mapped[Optional[str]] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Relative path to customer-uploaded payment proof image",
+    )
+
+    # ── Tracking / shipping number ────────────────────────────────────────────
+    tracking_number: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+        comment="Courier tracking number entered by Apoteker when shipping",
+    )
+
+    # ── Payment deadline (for auto-cancel background job) ─────────────────────
+    payment_deadline: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="UTC deadline for payment — order auto-cancelled if exceeded (1x24h)",
     )
 
     # ── Timestamps ────────────────────────────────────────────────────────────
