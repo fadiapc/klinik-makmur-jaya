@@ -34,6 +34,7 @@ from app.models.models import Order, OrderItem, User
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import MessageResponse
 from app.services.notification_service import notifier
+from app.services.report_generator import generate_pdf_report, generate_excel_report
 
 logger = logging.getLogger(__name__)
 
@@ -44,18 +45,20 @@ ws_router = APIRouter(tags=["🔔 Real-time Alerts"])
 # ── Background Task Logic ─────────────────────────────────────────────────────
 
 
-async def _generate_sales_report(start_date: Optional[datetime], end_date: Optional[datetime], user_id: int) -> None:
+async def _generate_sales_report(
+    start_date: Optional[datetime], 
+    end_date: Optional[datetime], 
+    user_id: int,
+    report_format: str
+) -> None:
     """
     Background task to generate a sales report.
-    For this demo, we generate a CSV file to simulate the PDF report generation,
-    ensuring zero external binary dependencies (like wkhtmltopdf) so the demo runs flawlessly.
+    Generates a PDF or Excel file using fpdf2 or openpyxl.
     """
-    logger.info("Starting background report generation for user_id=%d", user_id)
+    logger.info("Starting background report generation (%s) for user_id=%d", report_format, user_id)
     
-    # 1. Create a fresh DB session for the background task
     async with AsyncSessionLocal() as session:
         try:
-            # 2. Build the query
             conditions = []
             if start_date:
                 conditions.append(Order.created_at >= start_date)
@@ -75,50 +78,26 @@ async def _generate_sales_report(start_date: Optional[datetime], end_date: Optio
             result = await session.execute(stmt)
             orders = result.scalars().all()
             
-            # 3. Create the reports directory
             report_dir = Path(settings.UPLOAD_DIR) / "reports"
             report_dir.mkdir(parents=True, exist_ok=True)
             
-            # 4. Write CSV
-            filename = f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            file_path = report_dir / filename
-            
-            # We use synchronous file writing here, which is fine for a lightweight background task
-            with open(file_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    "Order Code", "Date", "Customer", "Order Type", 
-                    "Status", "Payment Method", "Grand Total (IDR)", "Items count"
-                ])
+            if report_format == "excel":
+                file_path = generate_excel_report(orders, report_dir)
+            else:
+                file_path = generate_pdf_report(orders, report_dir)
                 
-                total_revenue = 0.0
-                for order in orders:
-                    writer.writerow([
-                        order.order_code,
-                        order.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                        order.customer.full_name,
-                        order.order_type.value,
-                        order.status.value,
-                        order.payment_method.value,
-                        float(order.grand_total),
-                        len(order.items)
-                    ])
-                    total_revenue += float(order.grand_total)
-                    
-                writer.writerow([])
-                writer.writerow(["", "", "", "", "", "Total Revenue", total_revenue, ""])
-                
+            filename = file_path.name
             logger.info("Report generation complete. Saved to %s", file_path)
             
-            # Optional: Simulate sending a WebSocket alert to the user who requested it
             await notifier.broadcast_alert(
-                title="Report Ready",
-                message=f"Your sales report ({filename}) is ready for download.",
-                level="success"
+                title="Laporan Selesai",
+                message=f"Laporan Penjualan ({report_format.upper()}) Anda sudah siap diunduh.",
+                level="success",
+                link=f"/static/reports/{filename}"
             )
             
         except Exception as e:
-            logger.error("Failed to generate background report: %s", e)
+            logger.exception("Failed to generate background report")
             await notifier.broadcast_alert(
                 title="Report Failed",
                 message="An error occurred while generating the sales report.",
@@ -130,24 +109,20 @@ async def _generate_sales_report(start_date: Optional[datetime], end_date: Optio
 
 
 @router.get(
-    "/reports/sales-pdf",
+    "/reports/sales",
     response_model=MessageResponse,
-    summary="Generate Sales Report (Simulated PDF as CSV)",
-    description=(
-        "Triggers a background task to generate a sales report for the given date range.\n\n"
-        "**Note**: For the purpose of the demo and zero-configuration environment stability, "
-        "this generates a formatted `.csv` file locally rather than a PDF, avoiding the need "
-        "for system-level `wkhtmltopdf` binaries. The file is saved in the `uploads/reports/` directory."
-    ),
+    summary="Generate Sales Report (PDF or Excel)",
+    description="Triggers a background task to generate a sales report for the given date range.",
 )
 async def generate_sales_report_endpoint(
     background_tasks: BackgroundTasks,
+    format: str = Query("pdf", description="Report format: 'pdf' or 'excel'"),
     start_date: Optional[datetime] = Query(None, description="Start date (ISO8601)"),
     end_date: Optional[datetime] = Query(None, description="End date (ISO8601)"),
     current_user: User = Depends(RequireAdminOrApoteker),
 ) -> MessageResponse:
     """Enqueues the report generation task."""
-    background_tasks.add_task(_generate_sales_report, start_date, end_date, current_user.id)
+    background_tasks.add_task(_generate_sales_report, start_date, end_date, current_user.id, format.lower())
     return MessageResponse(
         message="Sales report generation started in the background. You will receive an alert when it's ready."
     )

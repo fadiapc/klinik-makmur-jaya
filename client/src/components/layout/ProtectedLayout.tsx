@@ -1,10 +1,12 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
-import { LogOut, LayoutDashboard, Package, ExternalLink, Users, ShieldCheck } from "lucide-react"
+import { useWebSocket } from "../../hooks/useWebSocket"
+import { LogOut, LayoutDashboard, Package, ExternalLink, Users, ShieldCheck, X, FileText } from "lucide-react"
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
   const location = useLocation()
+  const { lastAlert, clearAlert } = useWebSocket()
 
   const isAdmin = user?.role?.name?.toLowerCase() === 'admin'
 
@@ -17,9 +19,12 @@ export default function ProtectedLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r flex flex-col shadow-sm">
         <div className="py-4 flex flex-col justify-center px-6 border-b h-20">
-          <Link to="/dashboard" className="font-bold leading-tight">
-            <span className="block text-slate-900 text-sm">Klinik</span>
-            <span className="block text-primary text-xl">Makmur Jaya</span>
+          <Link to="/dashboard" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+            <div className="font-bold leading-tight">
+              <span className="block text-slate-900 text-sm">Klinik</span>
+              <span className="block text-primary text-xl">Makmur Jaya</span>
+            </div>
           </Link>
         </div>
         
@@ -85,10 +90,45 @@ export default function ProtectedLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col">
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
+
+      {/* WebSocket Global Toast */}
+      {lastAlert && (
+        <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
+          <div className="bg-white border border-slate-200 shadow-lg rounded-xl p-4 w-80 relative flex gap-3">
+            <button 
+              onClick={clearAlert}
+              className="absolute top-2 right-2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className={`p-2 rounded-full h-fit ${
+              lastAlert.level === 'success' ? 'bg-primary/10 text-primary' : 
+              lastAlert.level === 'error' ? 'bg-red-100 text-red-600' : 
+              'bg-blue-100 text-blue-600'
+            }`}>
+              {lastAlert.link ? <FileText className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-slate-800 text-sm mb-1">{lastAlert.title}</h4>
+              <p className="text-slate-600 text-sm">{lastAlert.message}</p>
+              {lastAlert.link && (
+                <a 
+                  href={`${import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:8000'}${lastAlert.link}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="mt-3 inline-block bg-primary text-white text-xs px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition"
+                  onClick={clearAlert}
+                >
+                  Download Laporan
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

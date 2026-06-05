@@ -9,9 +9,12 @@ export default function PublicLayout() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/catalog" className="text-xl font-bold">
-            <span className="text-slate-900">Klinik </span>
-            <span className="text-primary">Makmur Jaya</span>
+          <Link to="/catalog" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <div className="text-xl font-bold leading-tight">
+              <span className="text-slate-900">Klinik </span>
+              <span className="text-primary">Makmur Jaya</span>
+            </div>
           </Link>
           
           <nav className="flex items-center gap-4">

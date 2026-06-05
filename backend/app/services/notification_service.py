@@ -33,7 +33,7 @@ class ConnectionManager:
             self.active_connections.remove(websocket)
             logger.info("WebSocket disconnected. Total active: %d", len(self.active_connections))
 
-    async def broadcast_alert(self, title: str, message: str, level: str = "info") -> None:
+    async def broadcast_alert(self, title: str, message: str, level: str = "info", link: str = None) -> None:
         """
         Push a JSON alert to all connected clients.
         
@@ -41,6 +41,7 @@ class ConnectionManager:
             title: Short alert title (e.g. "Stock Critical").
             message: Detailed message body.
             level: "info", "warning", or "error".
+            link: Optional URL/path for user to click/download.
         """
         payload = {
             "type": "alert",
@@ -48,6 +49,8 @@ class ConnectionManager:
             "title": title,
             "message": message,
         }
+        if link:
+            payload["link"] = link
         
         # Snapshot the list to safely iterate if connections drop
         for connection in list(self.active_connections):
