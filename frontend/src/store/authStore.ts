@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { useCartStore } from "./cartStore"
 
 interface Role {
   id: number
@@ -31,7 +32,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       login: (token, user) => set({ token, user, isAuthenticated: true }),
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
+      logout: () => {
+        useCartStore.getState().clearCart()
+        set({ token: null, user: null, isAuthenticated: false })
+      },
     }),
     {
       name: "auth-storage", // keys for localStorage

@@ -36,7 +36,7 @@ export default function LoginPage() {
       login(access_token, user)
       
       // Navigate based on role
-      if (user.role.name === "pasien") {
+      if (user.role.name.toLowerCase() === "pasien") {
         navigate("/catalog")
       } else {
         navigate("/dashboard")

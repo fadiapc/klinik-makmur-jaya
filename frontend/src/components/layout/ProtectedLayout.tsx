@@ -23,10 +23,15 @@ export default function ProtectedLayout() {
   }, [])
 
   const isAdmin = user?.role?.name?.toLowerCase() === 'admin'
+  const isPasien = user?.role?.name?.toLowerCase() === 'pasien'
   const unreadCount = notifications.filter(n => !n.read).length
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  if (isPasien) {
+    return <Navigate to="/catalog" replace />
   }
 
   return (
