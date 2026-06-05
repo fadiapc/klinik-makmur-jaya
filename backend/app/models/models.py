@@ -1173,3 +1173,13 @@ class AuditLog(Base):
             f"<AuditLog id={self.id} user_id={self.user_id} "
             f"action={self.action!r} module={self.module!r}>"
         )
+
+
+class SystemSetting(Base):
+    __tablename__ = "system_settings"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    key: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    value: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
