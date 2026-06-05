@@ -236,9 +236,6 @@ export default function CatalogPage() {
                       <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
                         {product.category.name}
                       </span>
-                      <span className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded">
-                        Stok: {10 + (product.id % 50)}
-                      </span>
                     </div>
                     
                     <h3 className="font-bold text-slate-900 line-clamp-2 mb-2 group-hover:text-teal-600 transition-colors text-base leading-snug flex-1">

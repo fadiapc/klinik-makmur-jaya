@@ -230,6 +230,69 @@ class OrderOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+    @classmethod
+    def from_orm_model(
+        cls,
+        order: object,
+        requires_prescription: bool = False,
+        prescription_required_and_missing: bool = False,
+        stock_deductions: Optional[List[FifoDeductionDetail]] = None
+    ) -> "OrderOut":
+        o = order  # type: ignore
+        
+        items_out = []
+        for item in o.items:
+            items_out.append(OrderItemOut(
+                id=item.id,
+                product_id=item.product_id,
+                product_name=item.product.name,
+                product_sku=item.product.sku,
+                requires_prescription=item.product.requires_prescription,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                subtotal=item.subtotal
+            ))
+            
+        prescription_out = None
+        if o.prescription:
+            prescription_out = PrescriptionOut(
+                id=o.prescription.id,
+                status=o.prescription.status.value,
+                image_url=o.prescription.image_url,
+                patient_name=o.prescription.patient.name if o.prescription.patient else "",
+                pharmacist_name=o.prescription.pharmacist.name if o.prescription.pharmacist else None,
+                rejection_reason=o.prescription.rejection_reason,
+                verified_at=o.prescription.verified_at.isoformat() if o.prescription.verified_at else None,
+                uploaded_at=o.prescription.created_at.isoformat()
+            )
+            
+        return cls(
+            id=o.id,
+            order_code=o.order_code,
+            customer_name=o.customer.name,
+            customer_email=o.customer.email,
+            cashier_name=o.cashier.name if o.cashier else None,
+            status=o.status.value if hasattr(o.status, 'value') else o.status,
+            order_type=o.order_type.value if hasattr(o.order_type, 'value') else o.order_type,
+            subtotal=o.subtotal,
+            discount=o.discount,
+            tax=o.tax,
+            grand_total=o.grand_total,
+            payment_method=o.payment_method.value if hasattr(o.payment_method, 'value') else o.payment_method,
+            payment_status=o.payment_status.value if hasattr(o.payment_status, 'value') else o.payment_status,
+            payment_proof_url=o.payment_proof_url,
+            tracking_number=o.tracking_number,
+            payment_deadline=o.payment_deadline.isoformat() if o.payment_deadline else None,
+            notes=o.notes,
+            requires_prescription=requires_prescription,
+            prescription_required_and_missing=prescription_required_and_missing,
+            items=items_out,
+            prescription=prescription_out,
+            stock_deductions=stock_deductions,
+            created_at=o.created_at.isoformat() if o.created_at else "",
+            updated_at=o.updated_at.isoformat() if o.updated_at else ""
+        )
+
 
 class PrescriptionUploadResponse(BaseModel):
     """Response after POST /api/v1/orders/{id}/prescription."""

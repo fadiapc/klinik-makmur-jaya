@@ -349,7 +349,7 @@ export default function CartPage() {
 
             <button 
               type="submit"
-              disabled={isLoading || (hasPrescriptionItems && !prescriptionFile)}
+              disabled={isLoading}
               className="w-full bg-teal-500 hover:bg-teal-600 text-white h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (

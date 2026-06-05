@@ -1,3 +1,0 @@
-sku,name,category_id,supplier_id,price,min_stock_threshold,requires_prescription
-TEST-001,Obat Test 1,1,1,10000,10,false
-TEST-002,Obat Test 2,1,1,25000,5,true

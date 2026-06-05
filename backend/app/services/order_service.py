@@ -208,10 +208,12 @@ class OrderService:
         )
 
         # 8. Build response
-        order_out = OrderOut.model_validate(order)
-        order_out.requires_prescription = requires_rx_flag
-        order_out.prescription_required_and_missing = requires_rx_flag
-        order_out.stock_deductions = deductions_audit
+        order_out = OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag,
+            stock_deductions=deductions_audit
+        )
 
         logger.info(
             "Checkout successful | code=%s total=%s items=%d user_id=%d status=%s",
@@ -244,12 +246,13 @@ class OrderService:
                 detail="You do not have permission to access this order.",
             )
 
-        order_out = OrderOut.model_validate(order)
         # Compute dynamic flags
         requires_rx_flag = any(item.product.requires_prescription for item in order.items)
-        order_out.requires_prescription = requires_rx_flag
-        order_out.prescription_required_and_missing = (
-            requires_rx_flag and order.prescription is None
+        
+        order_out = OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=(requires_rx_flag and order.prescription is None)
         )
 
         return order_out
@@ -275,11 +278,11 @@ class OrderService:
 
         items = []
         for o in orders:
-            o_out = OrderOut.model_validate(o)
             requires_rx_flag = any(item.product.requires_prescription for item in o.items)
-            o_out.requires_prescription = requires_rx_flag
-            o_out.prescription_required_and_missing = (
-                requires_rx_flag and o.prescription is None
+            o_out = OrderOut.from_orm_model(
+                order=o,
+                requires_prescription=requires_rx_flag,
+                prescription_required_and_missing=(requires_rx_flag and o.prescription is None)
             )
             items.append(o_out)
 

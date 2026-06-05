@@ -59,8 +59,7 @@ class InsufficientStockError(Exception):
         self.requested = requested
         self.available = available
         super().__init__(
-            f"Insufficient stock for '{product_name}' (id={product_id}): "
-            f"requested={requested}, available={available}."
+            f"Stok tidak mencukupi untuk '{product_name}'. Diminta: {requested}, Tersedia: {available}."
         )
 
 
@@ -117,7 +116,7 @@ class OrderRepository:
             )
             # FEFO sort: closest-expiry first, then oldest-received as tiebreaker
             .order_by(StockBatch.expiry_date.asc(), StockBatch.received_at.asc())
-            .with_for_update()          # ← SELECT … FOR UPDATE (PostgreSQL row lock)
+            .with_for_update(of=StockBatch)  # ← SELECT … FOR UPDATE (PostgreSQL row lock)
         )
         batches: list[StockBatch] = list(result.scalars().all())
 
@@ -176,8 +175,7 @@ class OrderRepository:
 
         count_result = await self.db.execute(
             select(func.count(Order.id)).where(
-                Order.created_at >= today_start,
-                Order.created_at < tomorrow_start,
+                Order.order_code.like(f"ORD-{today_str}-%")
             )
         )
         sequence = (count_result.scalar_one() or 0) + 1
