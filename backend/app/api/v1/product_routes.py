@@ -93,6 +93,18 @@ def _get_service(db: AsyncSession = Depends(get_db)) -> ProductService:
 
 # ── POST /products — Create product ──────────────────────────────────────────
 
+@router.get(
+    "/categories",
+    response_model=list[dict],
+    summary="Get all categories",
+)
+async def get_categories(db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import select
+    from app.models.models import Category
+    result = await db.execute(select(Category).order_by(Category.name))
+    categories = result.scalars().all()
+    return [{"id": c.id, "name": c.name} for c in categories]
+
 
 @router.post(
     "",
