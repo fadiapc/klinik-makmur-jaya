@@ -20,7 +20,8 @@ export default function CheckoutPage() {
   
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const hasPrescriptionItems = items.some(item => item.requires_prescription)
+  const safeItems = items || []
+  const hasPrescriptionItems = safeItems.some(item => item.requires_prescription)
 
   const formatIDR = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -98,11 +99,11 @@ export default function CheckoutPage() {
     }
   }
 
-  if (items.length === 0 && !successMode) {
+  if (safeItems.length === 0 && !successMode) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h2 className="text-2xl font-bold mb-4">Keranjang Anda Kosong</h2>
-        <button onClick={() => navigate("/catalog")} className="text-blue-600 font-medium">
+        <button onClick={() => navigate("/catalog")} className="text-teal-600 font-medium">
           Kembali ke Katalog
         </button>
       </div>
@@ -206,28 +207,28 @@ export default function CheckoutPage() {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Metode Pembayaran</h2>
             <div className="space-y-3">
-              <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'transfer' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'}`}>
+              <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'transfer' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-300'}`}>
                 <input 
                   type="radio" 
                   name="payment" 
                   value="transfer" 
                   checked={paymentMethod === 'transfer'} 
                   onChange={() => setPaymentMethod('transfer')}
-                  className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500" 
+                  className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500" 
                 />
                 <div className="flex-1">
                   <p className="font-bold text-slate-900 text-sm">Transfer Bank</p>
                   <p className="text-xs text-slate-500 mt-0.5">BCA, Mandiri, BNI, BRI</p>
                 </div>
               </label>
-              <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'qris' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'}`}>
+              <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'qris' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-300'}`}>
                 <input 
                   type="radio" 
                   name="payment" 
                   value="qris" 
                   checked={paymentMethod === 'qris'} 
                   onChange={() => setPaymentMethod('qris')}
-                  className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500" 
+                  className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500" 
                 />
                 <div className="flex-1">
                   <p className="font-bold text-slate-900 text-sm">QRIS</p>
@@ -256,7 +257,7 @@ export default function CheckoutPage() {
             <h2 className="text-lg font-bold text-slate-900 mb-4 border-b pb-4">Ringkasan</h2>
             
             <div className="space-y-4 mb-6">
-              {items.map(item => (
+              {safeItems.map((item) => (
                 <div key={item.id} className="flex justify-between items-start gap-4">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900 line-clamp-2">{item.name}</p>
@@ -271,13 +272,13 @@ export default function CheckoutPage() {
 
             <div className="pt-4 border-t border-slate-100 flex justify-between mb-8">
               <span className="font-bold text-slate-900">Total Pembayaran</span>
-              <span className="font-bold text-blue-600 text-xl">{formatIDR(totalPrice())}</span>
+              <span className="font-bold text-teal-600 text-xl">{formatIDR(totalPrice())}</span>
             </div>
 
             <button 
               type="submit"
               disabled={isLoading || (hasPrescriptionItems && !prescriptionFile)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>

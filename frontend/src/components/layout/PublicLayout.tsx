@@ -1,9 +1,11 @@
 import { Outlet, Link } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
-import { LogOut } from "lucide-react"
+import { useCartStore } from "../../store/cartStore"
+import { LogOut, ShoppingCart } from "lucide-react"
 
 export default function PublicLayout() {
   const { isAuthenticated, logout, user } = useAuthStore()
+  const { totalItems } = useCartStore()
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -18,15 +20,35 @@ export default function PublicLayout() {
           </Link>
           
           <nav className="flex items-center gap-4">
-            <Link to="/catalog" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
-              Katalog
-            </Link>
+            <div className="flex items-center gap-6">
+              <Link to="/catalog" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
+                Katalog
+              </Link>
+              
+              <Link to="/cart" className="relative text-slate-600 hover:text-teal-600 transition-colors p-1 flex items-center">
+                <ShoppingCart className="w-5 h-5" />
+                {totalItems() > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                    {totalItems()}
+                  </span>
+                )}
+              </Link>
+            </div>
+            
+            <div className="h-6 w-px bg-slate-200 mx-2"></div>
             
             {isAuthenticated ? (
-              <div className="flex items-center gap-4 ml-4">
-                <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-primary">
-                  Dashboard
-                </Link>
+              <div className="flex items-center gap-4">
+                {user?.role.name === "pasien" && (
+                  <Link to="/orders" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
+                    Pesanan Saya
+                  </Link>
+                )}
+                {user?.role.name !== "pasien" && (
+                  <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
+                    Dashboard
+                  </Link>
+                )}
                 <div className="h-4 w-px bg-slate-200"></div>
                 <span className="text-sm font-medium text-slate-900">{user?.name}</span>
                 <button 

@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Link, useLocation } from "react"
+import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { useCartStore } from "../../store/cartStore"
 import { useWebSocket } from "../../hooks/useWebSocket"
@@ -14,8 +14,8 @@ export default function CustomerLayout() {
     return <Navigate to="/login" replace />
   }
 
-  // Double check if role is pasien, if not, redirect to dashboard
-  if (user.role.name !== "pasien") {
+  // Optional: Allow admin to view for testing purposes, but generally restricted to pasien
+  if (user.role?.name !== "pasien" && user.role?.name?.toLowerCase() !== "admin" && user.role?.name?.toLowerCase() !== "apoteker") {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -31,7 +31,7 @@ export default function CustomerLayout() {
             <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
             <div className="text-xl font-bold leading-tight hidden md:block">
               <span className="text-slate-900">Klinik </span>
-              <span className="text-blue-600">Makmur Jaya</span>
+              <span className="text-primary">Makmur Jaya</span>
             </div>
           </Link>
           
@@ -39,7 +39,7 @@ export default function CustomerLayout() {
             <Link 
               to="/catalog" 
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                location.pathname.startsWith("/catalog") ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-100"
+                location.pathname.startsWith("/catalog") ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <Package className="w-4 h-4" />
@@ -49,7 +49,7 @@ export default function CustomerLayout() {
             <Link 
               to="/orders" 
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                location.pathname.startsWith("/orders") ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-100"
+                location.pathname.startsWith("/orders") ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <ClipboardList className="w-4 h-4" />
@@ -59,7 +59,7 @@ export default function CustomerLayout() {
             <Link 
               to="/cart" 
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-                location.pathname === "/cart" ? "text-blue-600 bg-blue-50" : "text-slate-600 hover:bg-slate-100"
+                location.pathname === "/cart" ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
               }`}
             >
               <ShoppingCart className="w-4 h-4" />
@@ -74,10 +74,10 @@ export default function CustomerLayout() {
             <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
 
             <div className="flex items-center gap-3 pl-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
                 <User className="w-4 h-4" />
               </div>
-              <span className="text-sm font-semibold text-slate-900 hidden md:block">{user.name}</span>
+              <span className="text-sm font-semibold text-slate-900 hidden md:block">{user?.name}</span>
               <button 
                 onClick={handleLogout}
                 className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -115,7 +115,7 @@ export default function CustomerLayout() {
             <div className={`p-2 rounded-full h-fit shrink-0 ${
               lastAlert.level === "success" ? "bg-green-100 text-green-600" :
               lastAlert.level === "error" ? "bg-red-100 text-red-600" :
-              "bg-blue-100 text-blue-600"
+              "bg-teal-100 text-teal-600"
             }`}>
               {lastAlert.link ? <FileText className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
             </div>

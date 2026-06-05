@@ -1,10 +1,27 @@
-import { useNavigate } from "react"
+import { useState, useRef } from "react"
+import { useNavigate } from "react-router-dom"
 import { useCartStore } from "../../store/cartStore"
-import { Trash2, AlertTriangle, ArrowRight, ArrowLeft } from "lucide-react"
+import { api } from "../../lib/api"
+import { Trash2, AlertTriangle, ArrowLeft, UploadCloud, FileImage, X, Loader2, CheckCircle } from "lucide-react"
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, totalPrice } = useCartStore()
+  const { items, updateQuantity, removeItem, totalPrice, clearCart } = useCartStore()
   const navigate = useNavigate()
+
+  const [paymentMethod, setPaymentMethod] = useState("transfer")
+  const [notes, setNotes] = useState("")
+  
+  const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [successMode, setSuccessMode] = useState(false)
+  
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const safeItems = items || []
+  const hasPrescriptionItems = safeItems.some(item => item.requires_prescription)
 
   const formatIDR = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -19,9 +36,75 @@ export default function CartPage() {
     return `http://localhost:8000/static/${url}`
   }
 
-  const hasPrescriptionItems = items.some(item => item.requires_prescription)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
 
-  if (items.length === 0) {
+    if (!file.type.startsWith("image/")) {
+      setError("File resep harus berupa gambar (JPG, PNG).")
+      return
+    }
+
+    setPrescriptionFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => setPreviewUrl(e.target?.result as string)
+    reader.readAsDataURL(file)
+    setError("")
+  }
+
+  const removeFile = () => {
+    setPrescriptionFile(null)
+    setPreviewUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  const handleCheckout = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (safeItems.length === 0) return
+
+    if (hasPrescriptionItems && !prescriptionFile) {
+      setError("Silakan unggah foto resep dokter terlebih dahulu.")
+      return
+    }
+
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // 1. Create Order
+      const payload = {
+        items: safeItems.map(item => ({ product_id: item.id, quantity: item.quantity })),
+        payment_method: paymentMethod,
+        notes: notes
+      }
+      
+      const res = await api.post("/orders/checkout", payload)
+      const order = res.data
+
+      // 2. Upload Prescription if needed
+      if (hasPrescriptionItems && order.prescription_required_and_missing && prescriptionFile) {
+        const formData = new FormData()
+        formData.append("file", prescriptionFile)
+        
+        await api.post(`/orders/${order.id}/prescription`, formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+      }
+
+      setSuccessMode(true)
+      clearCart()
+      
+      setTimeout(() => {
+        navigate("/orders")
+      }, 3000)
+
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Terjadi kesalahan saat memproses pesanan.")
+      setIsLoading(false)
+    }
+  }
+
+  if (safeItems.length === 0 && !successMode) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-2xl">
         <div className="bg-white p-12 rounded-3xl border border-slate-200 shadow-sm">
@@ -34,7 +117,7 @@ export default function CartPage() {
           <p className="text-slate-500 mb-8">Belum ada produk yang ditambahkan ke keranjang belanja Anda.</p>
           <button 
             onClick={() => navigate("/catalog")}
-            className="inline-flex items-center justify-center rounded-xl font-bold transition-all bg-blue-600 text-white hover:bg-blue-700 h-12 px-8 shadow-sm"
+            className="inline-flex items-center justify-center rounded-xl font-bold transition-all bg-teal-500 text-white hover:bg-teal-600 h-12 px-8 shadow-sm"
           >
             Mulai Belanja
           </button>
@@ -43,8 +126,28 @@ export default function CartPage() {
     )
   }
 
+  if (successMode) {
+    return (
+      <div className="container mx-auto px-4 py-24 text-center max-w-lg">
+        <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center">
+          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+            <CheckCircle className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Pesanan Berhasil Dibuat!</h2>
+          <p className="text-slate-500 mb-8">
+            Pesanan Anda sedang diproses. {hasPrescriptionItems && "Apoteker kami akan segera memverifikasi resep Anda."}
+          </p>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 w-full animate-pulse rounded-full"></div>
+          </div>
+          <p className="text-xs text-slate-400 mt-4">Mengarahkan ke Riwayat Pesanan...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={() => navigate("/catalog")}
@@ -52,102 +155,218 @@ export default function CartPage() {
         >
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Keranjang Belanja</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Keranjang & Checkout</h1>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Cart Items */}
-        <div className="flex-1 space-y-4">
-          {items.map((item) => (
-            <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex gap-4">
-              <div className="w-24 h-24 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 flex-shrink-0">
-                <img src={getImageUrl(item.image_url)} alt={item.name} className="w-full h-full object-contain p-2" />
-              </div>
-              
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start gap-4">
-                    <h3 className="font-bold text-slate-900 line-clamp-2">{item.name}</h3>
-                    <button 
-                      onClick={() => removeItem(item.id)}
-                      className="text-red-400 hover:text-red-600 p-1"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                  {item.requires_prescription && (
-                    <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
-                      <AlertTriangle className="w-3 h-3" />
-                      RESEP DOKTER
-                    </span>
-                  )}
-                </div>
+      <form onSubmit={handleCheckout} className="flex flex-col lg:flex-row gap-8">
+        {/* Left Content (Items + Form Fields) */}
+        <div className="flex-1 space-y-8">
+          
+          {error && (
+            <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <p className="text-sm">{error}</p>
+            </div>
+          )}
 
-                <div className="flex items-end justify-between mt-4">
-                  <div className="font-bold text-slate-900">
-                    {formatIDR(parseFloat(item.price))}
+          {/* Cart Items */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-2">Produk Anda</h2>
+            {safeItems.map((item) => (
+              <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex gap-4">
+                <div className="w-24 h-24 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 flex-shrink-0">
+                  <img src={getImageUrl(item.image_url)} alt={item.name} className="w-full h-full object-contain p-2" />
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start gap-4">
+                      <h3 className="font-bold text-slate-900 line-clamp-2">{item.name}</h3>
+                      <button 
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="text-red-400 hover:text-red-600 p-1"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                    {item.requires_prescription && (
+                      <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md border border-red-100">
+                        <AlertTriangle className="w-3 h-3" />
+                        RESEP DOKTER
+                      </span>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden h-9">
-                    <button 
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-full flex justify-center items-center text-slate-600 hover:bg-slate-100 transition-colors"
-                    >
-                      -
-                    </button>
-                    <input 
-                      type="number" 
-                      value={item.quantity}
-                      onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                      className="w-10 h-full text-center border-x border-slate-300 font-medium text-sm focus:outline-none"
-                      min="1"
-                    />
-                    <button 
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="w-8 h-full flex justify-center items-center text-slate-600 hover:bg-slate-100 transition-colors"
-                    >
-                      +
-                    </button>
+
+                  <div className="flex items-end justify-between mt-4">
+                    <div className="font-bold text-slate-900">
+                      {formatIDR(parseFloat(item.price))}
+                    </div>
+                    
+                    <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden h-9">
+                      <button 
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="w-8 h-full flex justify-center items-center text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        -
+                      </button>
+                      <input 
+                        type="number" 
+                        value={item.quantity}
+                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                        className="w-10 h-full text-center border-x border-slate-300 font-medium text-sm focus:outline-none"
+                        min="1"
+                      />
+                      <button 
+                        type="button"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="w-8 h-full flex justify-center items-center text-slate-600 hover:bg-slate-100 transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Prescription Upload */}
+          {hasPrescriptionItems && (
+            <div className="bg-white p-6 rounded-2xl border border-red-200 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+                <h2 className="text-lg font-bold text-slate-900">Unggah Resep Dokter</h2>
+              </div>
+              <p className="text-sm text-slate-600 mb-6">
+                Pesanan Anda mengandung obat keras yang memerlukan resep dokter. Silakan unggah foto resep dokter Anda yang asli dan jelas.
+              </p>
+
+              {!prescriptionFile ? (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 hover:border-teal-400 transition-colors"
+                >
+                  <UploadCloud className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-slate-900 mb-1">Klik untuk unggah foto resep</p>
+                  <p className="text-xs text-slate-500">Format: JPG, PNG (Max. 5MB)</p>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                </div>
+              ) : (
+                <div className="relative border border-slate-200 rounded-xl overflow-hidden group w-full max-w-sm">
+                  <img src={previewUrl!} alt="Preview Resep" className="w-full h-48 object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button 
+                      type="button"
+                      onClick={removeFile}
+                      className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full bg-white/90 p-2 border-t flex items-center gap-2 text-sm">
+                    <FileImage className="w-4 h-4 text-teal-600" />
+                    <span className="truncate">{prescriptionFile.name}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Payment Method & Notes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Payment Method */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Metode Pembayaran</h2>
+              <div className="space-y-3">
+                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'transfer' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-300'}`}>
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="transfer" 
+                    checked={paymentMethod === 'transfer'} 
+                    onChange={() => setPaymentMethod('transfer')}
+                    className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500" 
+                  />
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-sm">Transfer Bank</p>
+                    <p className="text-xs text-slate-500 mt-0.5">BCA, Mandiri, BNI, BRI</p>
+                  </div>
+                </label>
+                <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${paymentMethod === 'qris' ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-300'}`}>
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="qris" 
+                    checked={paymentMethod === 'qris'} 
+                    onChange={() => setPaymentMethod('qris')}
+                    className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500" 
+                  />
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900 text-sm">QRIS</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Gopay, OVO, Dana, LinkAja</p>
+                  </div>
+                </label>
               </div>
             </div>
-          ))}
+
+            {/* Notes */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Catatan (Opsional)</h2>
+              <textarea 
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Tambahkan catatan untuk pesanan Anda..."
+                className="w-full p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm h-32 resize-none"
+              ></textarea>
+            </div>
+          </div>
         </div>
 
-        {/* Order Summary */}
+        {/* Right Summary */}
         <div className="w-full lg:w-80 flex-shrink-0">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sticky top-24">
             <h2 className="text-lg font-bold text-slate-900 mb-4">Ringkasan Pesanan</h2>
             
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-slate-600">
-                <span>Total Harga ({items.reduce((acc, item) => acc + item.quantity, 0)} barang)</span>
+                <span>Total Harga ({safeItems.reduce((acc, item) => acc + item.quantity, 0)} barang)</span>
                 <span className="font-medium text-slate-900">{formatIDR(totalPrice())}</span>
               </div>
               <div className="pt-4 border-t border-slate-100 flex justify-between">
                 <span className="font-bold text-slate-900">Total Tagihan</span>
-                <span className="font-bold text-blue-600 text-lg">{formatIDR(totalPrice())}</span>
+                <span className="font-bold text-teal-600 text-lg">{formatIDR(totalPrice())}</span>
               </div>
             </div>
 
-            {hasPrescriptionItems && (
-              <div className="mb-6 bg-red-50 text-red-700 p-3 rounded-xl border border-red-100 flex gap-3 text-sm">
-                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                <p>Keranjang Anda mengandung obat keras. Anda akan diminta untuk mengunggah resep dokter pada halaman selanjutnya.</p>
-              </div>
-            )}
-
             <button 
-              onClick={() => navigate("/checkout")}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm"
+              type="submit"
+              disabled={isLoading || (hasPrescriptionItems && !prescriptionFile)}
+              className="w-full bg-teal-500 hover:bg-teal-600 text-white h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Lanjut ke Pembayaran
-              <ArrowRight className="w-4 h-4" />
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                "Buat Pesanan"
+              )}
             </button>
+            <p className="text-[10px] text-center text-slate-500 mt-4 leading-relaxed">
+              Dengan membuat pesanan, Anda menyetujui Syarat & Ketentuan yang berlaku.
+            </p>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
