@@ -1,9 +1,10 @@
-import { Navigate, Outlet } from "react-router-dom"
+import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
-import { LogOut } from "lucide-react"
+import { LogOut, Bell } from "lucide-react"
 
 export default function PosLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
+  const location = useLocation()
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -27,16 +28,28 @@ export default function PosLayout() {
               <span className="text-primary text-[19px] tracking-tight">Makmur Jaya</span>
             </div>
           </div>
-
-          {/* Title Section */}
-          <div className="hidden md:flex items-center gap-4 font-bold border-l pl-6 border-slate-200">
-            <span className="text-primary text-sm tracking-wide">Sistem POS Kasir</span>
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-800 text-lg">Katalog Obat</span>
-          </div>
         </div>
 
         <div className="flex items-center gap-6">
+          {/* Navigation Menus */}
+          <div className="flex items-center gap-2 mr-4">
+            <Link 
+              to="/pos" 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/pos' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              POS Kasir
+            </Link>
+            <Link 
+              to="/pos/orders" 
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${location.pathname === '/pos/orders' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              Pesanan Online
+            </Link>
+            <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              Notifikasi
+            </button>
+          </div>
           <div className="text-right">
             <p className="text-sm font-semibold text-slate-900">{user?.name}</p>
             <p className="text-xs text-slate-500 capitalize">{user?.role?.name}</p>

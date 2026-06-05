@@ -439,6 +439,7 @@ class OrderRepository:
         order.payment_proof_url = url
         self.db.add(order)
         await self.db.flush()
+        await self.db.refresh(order, attribute_names=["updated_at"])
         return order
 
     async def update_tracking(self, order: Order, tracking_number: str) -> Order:
@@ -446,6 +447,7 @@ class OrderRepository:
         order.tracking_number = tracking_number
         self.db.add(order)
         await self.db.flush()
+        await self.db.refresh(order, attribute_names=["updated_at"])
         return order
 
     async def update_payment_deadline(self, order: Order, deadline: datetime) -> Order:

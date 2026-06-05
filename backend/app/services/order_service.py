@@ -531,3 +531,247 @@ class OrderService:
         except Exception as e:
             print("CRASH IN REVIEW_PRESCRIPTION:", traceback.format_exc())
             raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+    async def upload_payment_proof(
+        self,
+        order_id: int,
+        file: UploadFile,
+        current_user: User,
+        request: Request,
+    ) -> OrderOut:
+        """
+        Upload a payment proof image for a specific order.
+        """
+        order = await self.repo.get_by_id(order_id)
+        if not order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Order with id={order_id} not found.",
+            )
+
+        if order.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only upload payment proofs for your own orders.",
+            )
+
+        if order.status != OrderStatus.MENUNGGU_PEMBAYARAN:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot upload payment proof when order status is {order.status.value}.",
+            )
+
+        # MIME type validation
+        content_type = file.content_type or ""
+        if content_type not in _ALLOWED_IMAGE_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Unsupported image type '{content_type}'. "
+                    f"Allowed types: {sorted(_ALLOWED_IMAGE_TYPES)}."
+                ),
+            )
+
+        # File size validation (Max 5MB)
+        image_bytes = await file.read()
+        max_bytes = 5 * 1024 * 1024
+        if len(image_bytes) > max_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"Image file too large ({len(image_bytes) / 1024 / 1024:.1f} MB). "
+                    f"Maximum is 5 MB."
+                ),
+            )
+
+        # Build path
+        ext = Path(file.filename or "").suffix.lower()
+        if not ext or ext not in _ALLOWED_IMAGE_EXTENSIONS:
+            ext = mimetypes.guess_extension(content_type) or ".jpg"
+            ext = ".jpg" if ext == ".jpe" else ext
+
+        upload_root = Path(settings.UPLOAD_DIR)
+        proof_dir = upload_root / "payments" / str(order.id)
+        proof_dir.mkdir(parents=True, exist_ok=True)
+
+        filename = f"{uuid.uuid4()}{ext}"
+        file_path = proof_dir / filename
+
+        # Write
+        file_path.write_bytes(image_bytes)
+        relative_url = f"payments/{order.id}/{filename}"
+
+        # DB Insert / Update
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        order = await self.repo.update_payment_proof(order, relative_url)
+        order = await self.repo.update_status(order, OrderStatus.MENUNGGU_KONFIRMASI_KASIR)
+
+        await log_audit(
+            db=self.db,
+            user_id=current_user.id,
+            action="UPLOAD_PAYMENT_PROOF",
+            module="ORDER",
+            target_type="Order",
+            target_id=order.id,
+            new_value={"payment_proof_url": relative_url, "status": OrderStatus.MENUNGGU_KONFIRMASI_KASIR.value},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )
+
+    async def kasir_confirm_payment(
+        self,
+        order_id: int,
+        current_user: User,
+        request: Request,
+    ) -> OrderOut:
+        """
+        Kasir mengkonfirmasi bahwa bukti transfer valid dan dana sudah masuk.
+        """
+        order = await self.repo.get_by_id(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        if order.status != OrderStatus.MENUNGGU_KONFIRMASI_KASIR:
+            raise HTTPException(status_code=400, detail="Order is not waiting for kasir confirmation")
+
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        order = await self.repo.update_status(order, OrderStatus.DIPROSES)
+        
+        await log_audit(
+            db=self.db,
+            user_id=current_user.id,
+            action="KASIR_CONFIRM_PAYMENT",
+            module="ORDER",
+            target_type="Order",
+            target_id=order.id,
+            new_value={"status": OrderStatus.DIPROSES.value},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )
+
+    async def kasir_reject_payment(
+        self,
+        order_id: int,
+        reason: str,
+        current_user: User,
+        request: Request,
+    ) -> OrderOut:
+        """
+        Kasir menolak bukti transfer (misal: buram, palsu, kurang).
+        """
+        order = await self.repo.get_by_id(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        if order.status != OrderStatus.MENUNGGU_KONFIRMASI_KASIR:
+            raise HTTPException(status_code=400, detail="Order is not waiting for kasir confirmation")
+
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        # Kembali ke MENUNGGU_PEMBAYARAN, dan hapus URL proof
+        order = await self.repo.update_status(order, OrderStatus.MENUNGGU_PEMBAYARAN)
+        order = await self.repo.update_payment_proof(order, None)
+        
+        await log_audit(
+            db=self.db,
+            user_id=current_user.id,
+            action="KASIR_REJECT_PAYMENT",
+            module="ORDER",
+            target_type="Order",
+            target_id=order.id,
+            new_value={"status": OrderStatus.MENUNGGU_PEMBAYARAN.value, "reason": reason},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )
+
+    async def apoteker_ship_order(
+        self,
+        order_id: int,
+        tracking_number: str,
+        current_user: User,
+        request: Request,
+    ) -> OrderOut:
+        order = await self.repo.get_by_id(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        if order.status != OrderStatus.DIPROSES:
+            raise HTTPException(status_code=400, detail="Order is not in DIPROSES status")
+
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        order = await self.repo.update_status(order, OrderStatus.DIKIRIM)
+        if tracking_number:
+            order = await self.repo.update_tracking(order, tracking_number)
+            
+        await log_audit(
+            db=self.db,
+            user_id=current_user.id,
+            action="SHIP_ORDER",
+            module="ORDER",
+            target_type="Order",
+            target_id=order.id,
+            new_value={"status": OrderStatus.DIKIRIM.value, "tracking_number": tracking_number},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )
+
+    async def confirm_received(
+        self,
+        order_id: int,
+        current_user: User,
+        request: Request,
+    ) -> OrderOut:
+        order = await self.repo.get_by_id(order_id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+            
+        if order.user_id != current_user.id and current_user.role.name not in ["admin", "kasir"]:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        
+        if order.status != OrderStatus.DIKIRIM:
+            raise HTTPException(status_code=400, detail="Order is not in DIKIRIM status")
+
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        order = await self.repo.update_status(order, OrderStatus.SELESAI)
+        
+        await log_audit(
+            db=self.db,
+            user_id=current_user.id,
+            action="CONFIRM_RECEIVED",
+            module="ORDER",
+            target_type="Order",
+            target_id=order.id,
+            new_value={"status": OrderStatus.SELESAI.value},
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )

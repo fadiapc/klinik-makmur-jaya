@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import React from "react"
+import { useAuthStore } from "./store/authStore"
 import PublicLayout from "./components/layout/PublicLayout"
 import ProtectedLayout from "./components/layout/ProtectedLayout"
 import PosLayout from "./components/layout/PosLayout"
@@ -16,9 +17,22 @@ import AdminProductsPage from "./pages/dashboard/AdminProductsPage"
 import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
 import AdminAuditLogPage from "./pages/dashboard/AdminAuditLogPage"
 import PosPage from "./pages/pos/PosPage"
+import KasirOrdersPage from "./pages/pos/KasirOrdersPage"
 import ApotekerLayout from "./components/layout/ApotekerLayout"
 import ApotekerDashboardPage from "./pages/apoteker/ApotekerDashboardPage"
 import ApotekerVerifikasiPage from "./pages/apoteker/ApotekerVerifikasiPage"
+
+
+function RoleRedirect() {
+  const { isAuthenticated, user } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  
+  const role = user?.role?.name?.toLowerCase()
+  if (role === 'admin') return <Navigate to="/admin/dashboard" replace />
+  if (role === 'apoteker') return <Navigate to="/apoteker" replace />
+  if (role === 'kasir') return <Navigate to="/pos" replace />
+  return <Navigate to="/orders" replace />
+}
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
   constructor(props: any) {
@@ -49,6 +63,7 @@ export default function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
+          <Route path="/dashboard" element={<RoleRedirect />} />
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Navigate to="/catalog" replace />} />
@@ -77,6 +92,7 @@ export default function App() {
           {/* POS Routes (Kasir) */}
           <Route element={<PosLayout />}>
             <Route path="/pos" element={<PosPage />} />
+            <Route path="/pos/orders" element={<KasirOrdersPage />} />
           </Route>
 
           {/* Apoteker Routes */}
