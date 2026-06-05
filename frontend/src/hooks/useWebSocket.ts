@@ -1,15 +1,17 @@
 import { useEffect, useState, useCallback } from "react"
 import { useAuthStore } from "../store/authStore"
+import { api } from "../lib/api"
 
-interface WebSocketAlert {
-  id?: string
+export interface WebSocketAlert {
+  id?: string | number
   timestamp?: number
   type: string
+  notif_type?: string
   level: "info" | "success" | "warning" | "error"
   title: string
   message: string
   link?: string
-  read?: boolean
+  is_read?: boolean
 }
 
 export function useWebSocket() {
@@ -17,6 +19,32 @@ export function useWebSocket() {
   const [lastAlert, setLastAlert] = useState<WebSocketAlert | null>(null)
   const [notifications, setNotifications] = useState<WebSocketAlert[]>([])
   const [isConnected, setIsConnected] = useState(false)
+
+  const fetchInitialNotifications = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      const res = await api.get("/notifications")
+      if (res.data && res.data.items) {
+        setNotifications(res.data.items.map((n: any) => ({
+          id: n.id,
+          timestamp: new Date(n.created_at).getTime(),
+          type: "alert",
+          notif_type: n.type,
+          level: n.level,
+          title: n.title,
+          message: n.message,
+          link: n.link,
+          is_read: n.is_read
+        })))
+      }
+    } catch (err) {
+      console.error("Failed to fetch initial notifications", err)
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    fetchInitialNotifications()
+  }, [fetchInitialNotifications])
 
   const connect = useCallback(() => {
     if (!isAuthenticated || !token) return
@@ -41,9 +69,14 @@ export function useWebSocket() {
       try {
         const data: WebSocketAlert = JSON.parse(event.data)
         if (data.type === "alert") {
-          const newAlert = { ...data, id: Math.random().toString(36).substring(7), timestamp: Date.now(), read: false }
+          const newAlert = { 
+            ...data, 
+            id: data.id || Math.random().toString(36).substring(7), 
+            timestamp: data.timestamp || Date.now(), 
+            is_read: false 
+          }
           setLastAlert(newAlert)
-          setNotifications(prev => [newAlert, ...prev].slice(0, 20))
+          setNotifications(prev => [newAlert, ...prev].slice(0, 50))
         }
       } catch (err) {
         console.error("Failed to parse WebSocket message", err)
@@ -70,13 +103,23 @@ export function useWebSocket() {
 
   const clearAlert = () => setLastAlert(null)
   
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  const markAsRead = async (id: string | number) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+    try {
+      await api.post(`/notifications/${id}/read`)
+    } catch (err) {
+      console.error("Failed to mark as read", err)
+    }
   }
   
-  const clearAllNotifications = () => {
-    setNotifications([])
+  const markAllAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    try {
+      await api.post(`/notifications/read-all`)
+    } catch (err) {
+      console.error("Failed to mark all as read", err)
+    }
   }
 
-  return { isConnected, lastAlert, clearAlert, notifications, markAsRead, clearAllNotifications }
+  return { isConnected, lastAlert, clearAlert, notifications, markAsRead, markAllAsRead }
 }

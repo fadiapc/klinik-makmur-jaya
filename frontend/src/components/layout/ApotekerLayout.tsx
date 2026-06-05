@@ -2,16 +2,15 @@ import { useState } from "react"
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { useWebSocket } from "../../hooks/useWebSocket"
+import NotificationDropdown from "../NotificationDropdown"
 import {
-  LogOut, LayoutDashboard, ClipboardList, Package, X,
-  ShieldCheck, FileText, Bell
+  LogOut, LayoutDashboard, ClipboardList, Package, X, FileText, Bell
 } from "lucide-react"
 
 export default function ApotekerLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
   const location = useLocation()
   const { lastAlert, clearAlert } = useWebSocket()
-  const [notifOpen, setNotifOpen] = useState(false)
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
@@ -95,83 +94,8 @@ export default function ApotekerLayout() {
             </span>
 
             {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen((o) => !o)}
-                className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-600"
-              >
-                <Bell className="w-5 h-5" />
-                {lastAlert && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-                )}
-              </button>
-
-              {/* Popup */}
-              {notifOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-
-                  <div className="absolute right-0 top-11 w-80 bg-white rounded-xl border border-slate-200 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex items-center justify-between px-4 py-3 border-b">
-                      <h3 className="font-bold text-slate-800 text-sm">Notifikasi</h3>
-                      <button
-                        onClick={() => setNotifOpen(false)}
-                        className="text-slate-400 hover:text-slate-700 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="max-h-72 overflow-y-auto">
-                      {!lastAlert ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                          <Bell className="w-8 h-8 mb-2 text-slate-300" />
-                          <p className="text-sm">Tidak ada notifikasi baru</p>
-                        </div>
-                      ) : (
-                        <div className="p-3">
-                          <div className={`flex gap-3 p-3 rounded-xl border ${
-                            lastAlert.level === "success"
-                              ? "bg-green-50 border-green-100"
-                              : lastAlert.level === "error"
-                              ? "bg-red-50 border-red-100"
-                              : "bg-blue-50 border-blue-100"
-                          }`}>
-                            <div className={`p-1.5 rounded-full h-fit ${
-                              lastAlert.level === "success" ? "bg-green-100 text-green-600" :
-                              lastAlert.level === "error" ? "bg-red-100 text-red-600" :
-                              "bg-blue-100 text-blue-600"
-                            }`}>
-                              {lastAlert.link ? <FileText className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-slate-800 text-sm">{lastAlert.title}</p>
-                              <p className="text-slate-600 text-xs mt-0.5">{lastAlert.message}</p>
-                              {lastAlert.link && (
-                                <a
-                                  href={`${import.meta.env.VITE_API_URL?.replace("/api/v1", "") || "http://localhost:8000"}${lastAlert.link}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="mt-2 inline-block text-xs bg-primary text-white px-3 py-1 rounded-lg font-medium hover:bg-primary/90"
-                                >
-                                  Download
-                                </a>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => { clearAlert(); setNotifOpen(false) }}
-                              className="text-slate-400 hover:text-slate-700 shrink-0"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
+            <div className="flex items-center">
+              <NotificationDropdown />
             </div>
           </div>
         </header>
@@ -183,7 +107,7 @@ export default function ApotekerLayout() {
       </div>
 
       {/* WebSocket Live Toast (auto-dismiss) */}
-      {lastAlert && !notifOpen && (
+      {lastAlert && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
           <div className="bg-white border border-slate-200 shadow-xl rounded-xl p-4 w-80 relative flex gap-3">
             <button

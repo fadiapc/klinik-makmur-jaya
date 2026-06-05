@@ -40,6 +40,7 @@ from app.schemas.order import (
     PrescriptionUploadResponse,
 )
 from app.utils.audit import log_audit
+from app.services.notification_service import notifier
 
 logger = logging.getLogger(__name__)
 
@@ -315,7 +316,22 @@ class OrderService:
         old_status = order.status
         if order.status == data.status:
             requires_rx_flag = any(item.product.requires_prescription for item in order.items)
-            return OrderOut.from_orm_model(
+    
+        if requires_rx:
+            await notifier.notify_role("apoteker", "Resep Baru", f"Pesanan {order.order_code} menunggu verifikasi resep.", type="order", link=f"/apoteker/verifikasi/{order.id}")
+        elif order.order_type == OrderType.ONLINE:
+            await notifier.notify_user(current_user.id, "Pesanan Berhasil", f"Silakan lakukan pembayaran untuk pesanan {order.order_code}.", type="order", link="/orders")
+
+        # Low stock check
+        for ded in deductions:
+            if ded["stock_remaining"] <= ded["min_stock"]:
+                warn_msg = f"Stok produk {ded['product_name']} menipis (sisa {ded['stock_remaining']})."
+                await notifier.notify_role("admin", "Peringatan Stok Menipis", warn_msg, level="warning", type="stock", link="/admin/products")
+                await notifier.notify_role("apoteker", "Peringatan Stok Menipis", warn_msg, level="warning", type="stock", link="/apoteker/produk")
+                await notifier.notify_role("kasir", "Peringatan Stok Menipis", warn_msg, level="warning", type="stock", link="/pos")
+
+        return OrderOut.from_orm_model(
+
                 order=order,
                 requires_prescription=requires_rx_flag,
                 prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
@@ -504,9 +520,11 @@ class OrderService:
                 payment_deadline = datetime.now(timezone.utc) + timedelta(hours=24)
                 await self.repo.update_status(order, new_order_status)
                 await self.repo.update_payment_deadline(order, payment_deadline)
+                await notifier.notify_user(order.user_id, "Resep Disetujui", f"Resep pesanan {order.order_code} disetujui. Silakan lakukan pembayaran.", type="order", link="/orders")
             else:
                 new_order_status = OrderStatus.DIBATALKAN
                 await self.repo.update_status(order, new_order_status)
+                await notifier.notify_user(order.user_id, "Resep Ditolak", f"Resep pesanan {order.order_code} ditolak. Pesanan dibatalkan.", level="error", type="order", link="/orders")
 
             await log_audit(
                 db=self.db,
@@ -606,6 +624,8 @@ class OrderService:
         order = await self.repo.update_payment_proof(order, relative_url)
         order = await self.repo.update_status(order, OrderStatus.MENUNGGU_KONFIRMASI_KASIR)
 
+        await notifier.notify_role("kasir", "Pembayaran Baru", f"Bukti transfer untuk {order.order_code} telah diunggah.", type="order", link="/pos/orders")
+
         await log_audit(
             db=self.db,
             user_id=current_user.id,
@@ -644,6 +664,9 @@ class OrderService:
         requires_rx_flag = any(item.product.requires_prescription for item in order.items)
         order = await self.repo.update_status(order, OrderStatus.DIPROSES)
         
+        await notifier.notify_role("apoteker", "Pesanan Lunas", f"Pesanan {order.order_code} lunas dan siap dikemas.", type="order", link="/apoteker/orders")
+        await notifier.notify_user(order.user_id, "Pembayaran Dikonfirmasi", f"Pembayaran {order.order_code} berhasil. Pesanan diproses.", type="order", link="/orders")
+
         await log_audit(
             db=self.db,
             user_id=current_user.id,
@@ -684,6 +707,8 @@ class OrderService:
         order = await self.repo.update_status(order, OrderStatus.MENUNGGU_PEMBAYARAN)
         order = await self.repo.update_payment_proof(order, None)
         
+        await notifier.notify_user(order.user_id, "Pembayaran Ditolak", f"Bukti transfer pesanan {order.order_code} ditolak: {reason}", level="error", type="order", link="/orders")
+
         await log_audit(
             db=self.db,
             user_id=current_user.id,
@@ -721,6 +746,8 @@ class OrderService:
         if tracking_number:
             order = await self.repo.update_tracking(order, tracking_number)
             
+        await notifier.notify_user(order.user_id, "Pesanan Dikirim", f"Pesanan {order.order_code} sedang dalam perjalanan.", type="order", link="/orders")
+
         await log_audit(
             db=self.db,
             user_id=current_user.id,
@@ -758,6 +785,8 @@ class OrderService:
         requires_rx_flag = any(item.product.requires_prescription for item in order.items)
         order = await self.repo.update_status(order, OrderStatus.SELESAI)
         
+        await notifier.notify_user(order.user_id, "Pesanan Selesai", f"Pesanan {order.order_code} telah selesai.", type="order", link="/orders")
+
         await log_audit(
             db=self.db,
             user_id=current_user.id,

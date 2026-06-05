@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { LogOut, Bell } from "lucide-react"
+import NotificationDropdown from "../NotificationDropdown"
 
 export default function PosLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -45,10 +46,9 @@ export default function PosLayout() {
             >
               Pesanan Online
             </Link>
-            <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Notifikasi
-            </button>
+            <div className="flex items-center ml-2">
+              <NotificationDropdown />
+            </div>
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold text-slate-900">{user?.name}</p>

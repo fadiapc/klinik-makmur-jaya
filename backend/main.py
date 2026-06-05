@@ -26,6 +26,8 @@ from slowapi.errors import RateLimitExceeded
 from app.api.v1 import auth_routes, dashboard_routes, order_routes, product_routes, user_routes, audit_routes, apoteker_routes
 from app.core.config import settings
 from app.core.database import close_db, init_db
+from app.services.expiry_service import expiry_check_loop
+import asyncio
 from app.core.security import limiter
 
 # ── Logging setup ─────────────────────────────────────────────────────────────
@@ -75,6 +77,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Startup: verify database
     await init_db()
+    
+    expiry_task = asyncio.create_task(expiry_check_loop())
 
     yield  # ← application runs here
 
@@ -159,6 +163,7 @@ app.include_router(dashboard_routes.ws_router)
 # Audit Log (Admin only)
 app.include_router(audit_routes.router, prefix="/api/v1")
 app.include_router(apoteker_routes.router, prefix="/api/v1")
+app.include_router(notification_routes.router, prefix="/api/v1")
 
 # Future routers (added per phase):
 # from app.api.v1 import stock_routes

@@ -176,7 +176,7 @@ async def websocket_alerts(
         await websocket.close(code=1008, reason="Unauthorized or missing token")
         return
 
-    await notifier.connect(websocket)
+    await notifier.connect(websocket, user.id)
     try:
         # Keep connection open and listen for potential incoming client messages
         # In a purely one-way push system, we just loop and wait.
@@ -185,4 +185,4 @@ async def websocket_alerts(
             data = await websocket.receive_text()
             logger.debug("Received WS message from user %d: %s", user.id, data)
     except WebSocketDisconnect:
-        notifier.disconnect(websocket)
+        notifier.disconnect(websocket, user.id)
