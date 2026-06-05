@@ -74,7 +74,7 @@ def generate_pdf_report(orders: Sequence[Order], report_dir: Path) -> Path:
         pdf.cell(col_widths[0], 8, str(order.order_code), border=1, fill=True, align="C")
         pdf.cell(col_widths[1], 8, order.created_at.strftime("%Y-%m-%d %H:%M"), border=1, fill=True, align="C")
         
-        customer_name = str(order.customer.full_name) if order.customer else "Unknown"
+        customer_name = str(order.customer.name) if order.customer else "Unknown"
         # Truncate if too long
         if len(customer_name) > 25:
             customer_name = customer_name[:22] + "..."
@@ -137,7 +137,7 @@ def generate_excel_report(orders: Sequence[Order], report_dir: Path) -> Path:
     row_idx = 5
     
     for order in orders:
-        customer_name = str(order.customer.full_name) if order.customer else "Unknown"
+        customer_name = str(order.customer.name) if order.customer else "Unknown"
         grand_total = float(order.grand_total)
         
         ws.cell(row=row_idx, column=1, value=str(order.order_code))
