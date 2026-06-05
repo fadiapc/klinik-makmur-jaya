@@ -39,6 +39,7 @@ export default function CatalogPage() {
   
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [sortOption, setSortOption] = useState<string>("")
   const [addedItem, setAddedItem] = useState<number | null>(null) // For success feedback
 
   const navigate = useNavigate()
@@ -52,7 +53,7 @@ export default function CatalogPage() {
 
   useEffect(() => {
     fetchProducts()
-  }, [selectedCategory])
+  }, [selectedCategory, sortOption])
 
   const fetchCategories = async () => {
     try {
@@ -70,6 +71,13 @@ export default function CatalogPage() {
       const params = new URLSearchParams()
       if (search || searchQuery) params.set("q", search ?? searchQuery)
       if (selectedCategory) params.set("category_id", String(selectedCategory))
+      if (sortOption === "price_asc") {
+        params.set("sort_by", "price")
+        params.set("sort_order", "asc")
+      } else if (sortOption === "price_desc") {
+        params.set("sort_by", "price")
+        params.set("sort_order", "desc")
+      }
 
       const queryString = params.toString()
       const url = queryString ? `/products?${queryString}` : `/products`
@@ -125,9 +133,19 @@ export default function CatalogPage() {
           <p className="text-slate-500 text-sm mt-1">Temukan obat dan kebutuhan medis Anda.</p>
         </div>
         
-        <div className="w-full md:w-auto flex-1 max-w-2xl">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+        <div className="w-full md:w-auto flex-1 max-w-4xl">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2">
             
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="block w-full md:w-40 pl-3 pr-8 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+            >
+              <option value="">Urutkan</option>
+              <option value="price_asc">Harga Terendah</option>
+              <option value="price_desc">Harga Tertinggi</option>
+            </select>
+
             <select
               value={selectedCategory === null ? "" : selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : null)}
