@@ -65,9 +65,10 @@ export default function App() {
             <Route path="/orders" element={<OrderHistoryPage />} />
           </Route>
           
-          {/* Protected Routes (Dashboard) */}
+          {/* Protected Routes (Admin) */}
           <Route element={<ProtectedLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={<DashboardPage />} />
             <Route path="/admin/products" element={<AdminProductsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/audit" element={<AdminAuditLogPage />} />

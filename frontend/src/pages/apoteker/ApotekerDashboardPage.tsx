@@ -238,7 +238,7 @@ export default function ApotekerDashboardPage() {
                       </td>
                       <td className="px-4 py-4">
                         <button
-                          onClick={() => setImageModal(`${API_BASE}/${rx.image_url}`)}
+                          onClick={() => setImageModal(`${API_BASE}/static/${rx.image_url}`)}
                           className="inline-flex items-center gap-1.5 text-primary hover:text-primary/80 text-xs font-semibold border border-primary/20 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />

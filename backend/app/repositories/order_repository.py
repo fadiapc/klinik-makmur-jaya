@@ -372,6 +372,7 @@ class OrderRepository:
             order.notes = f"{existing}\n[{new_status.value.upper()}] {notes}".strip()
         self.db.add(order)
         await self.db.flush()
+        await self.db.refresh(order, attribute_names=["updated_at"])
         return order
 
     # ── Prescription writes ───────────────────────────────────────────────────
@@ -416,6 +417,7 @@ class OrderRepository:
         prescription.verified_at = reviewed_at
         self.db.add(prescription)
         await self.db.flush()
+        await self.db.refresh(prescription, attribute_names=["updated_at"])
         return prescription
 
     async def get_prescription_by_order_id(self, order_id: int) -> Optional[Prescription]:
@@ -451,6 +453,7 @@ class OrderRepository:
         order.payment_deadline = deadline
         self.db.add(order)
         await self.db.flush()
+        await self.db.refresh(order, attribute_names=["updated_at"])
         return order
 
     async def list_overdue_orders(self) -> list[Order]:

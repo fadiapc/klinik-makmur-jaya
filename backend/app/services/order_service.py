@@ -313,8 +313,14 @@ class OrderService:
             )
 
         old_status = order.status
-        if old_status == data.status:
-            return OrderOut.model_validate(order)  # No-op
+        if order.status == data.status:
+            requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+            return OrderOut.from_orm_model(
+                order=order,
+                requires_prescription=requires_rx_flag,
+                prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+                stock_deductions=[]
+            )
 
         order = await self.repo.update_status(order, data.status, data.notes)
 
@@ -335,7 +341,13 @@ class OrderService:
             order.id, old_status.value, data.status.value, current_user.id
         )
 
-        return OrderOut.model_validate(order)
+        requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+        return OrderOut.from_orm_model(
+            order=order,
+            requires_prescription=requires_rx_flag,
+            prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+            stock_deductions=[]
+        )
 
     # ── Prescriptions ─────────────────────────────────────────────────────────
 
@@ -448,61 +460,74 @@ class OrderService:
         Apoteker reviews the prescription (approved/rejected).
 
         Auto-transition:
-          - APPROVED → order.status = MENUNGGU_PEMBAYARAN + payment_deadline = now+24h
-          - REJECTED → order.status = DIBATALKAN
+          - APPROVED -> order.status = MENUNGGU_PEMBAYARAN + payment_deadline = now+24h
+          - REJECTED -> order.status = DIBATALKAN
         """
-        order = await self.repo.get_by_id(order_id)
-        if not order:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Order with id={order_id} not found.",
+        import traceback
+        try:
+            order = await self.repo.get_by_id(order_id)
+            if not order:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Order with id={order_id} not found.",
+                )
+
+            prescription = order.prescription
+            if not prescription:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No prescription found for this order.",
+                )
+
+            if prescription.status != PrescriptionStatus.PENDING:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Prescription has already been {prescription.status.value}.",
+                )
+
+            new_rx_status = (
+                PrescriptionStatus.APPROVED if data.action == "approved"
+                else PrescriptionStatus.REJECTED
             )
 
-        prescription = order.prescription
-        if not prescription:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No prescription found for this order.",
+            prescription = await self.repo.update_prescription_review(
+                prescription,
+                pharmacist_id=current_user.id,
+                new_status=new_rx_status,
+                rejection_reason=data.rejection_reason,
+                reviewed_at=datetime.now(timezone.utc),
             )
 
-        if prescription.status != PrescriptionStatus.PENDING:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Prescription has already been {prescription.status.value}.",
+            # Auto-transition order status
+            if new_rx_status == PrescriptionStatus.APPROVED:
+                new_order_status = OrderStatus.MENUNGGU_PEMBAYARAN
+                payment_deadline = datetime.now(timezone.utc) + timedelta(hours=24)
+                await self.repo.update_status(order, new_order_status)
+                await self.repo.update_payment_deadline(order, payment_deadline)
+            else:
+                new_order_status = OrderStatus.DIBATALKAN
+                await self.repo.update_status(order, new_order_status)
+
+            await log_audit(
+                db=self.db,
+                user_id=current_user.id,
+                action="REVIEW_PRESCRIPTION",
+                module="ORDER",
+                target_type="Prescription",
+                target_id=prescription.id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
             )
 
-        new_rx_status = (
-            PrescriptionStatus.APPROVED if data.action == "approved"
-            else PrescriptionStatus.REJECTED
-        )
-
-        prescription = await self.repo.update_prescription_review(
-            prescription,
-            pharmacist_id=current_user.id,
-            new_status=new_rx_status,
-            rejection_reason=data.rejection_reason,
-            reviewed_at=datetime.now(timezone.utc),
-        )
-
-        # Auto-transition order status
-        if new_rx_status == PrescriptionStatus.APPROVED:
-            new_order_status = OrderStatus.MENUNGGU_PEMBAYARAN
-            payment_deadline = datetime.now(timezone.utc) + timedelta(hours=24)
-            await self.repo.update_status(order, new_order_status)
-            await self.repo.update_payment_deadline(order, payment_deadline)
-        else:
-            new_order_status = OrderStatus.DIBATALKAN
-            await self.repo.update_status(order, new_order_status)
-
-        await log_audit(
-            db=self.db,
-            user_id=current_user.id,
-            action="REVIEW_PRESCRIPTION",
-            module="ORDER",
-            target_type="Prescription",
-            target_id=prescription.id,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
-        )
-
-        return OrderOut.model_validate(order)
+            requires_rx_flag = any(item.product.requires_prescription for item in order.items)
+            return OrderOut.from_orm_model(
+                order=order,
+                requires_prescription=requires_rx_flag,
+                prescription_required_and_missing=requires_rx_flag and (not order.prescription or order.prescription.status != PrescriptionStatus.APPROVED),
+                stock_deductions=[]
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            print("CRASH IN REVIEW_PRESCRIPTION:", traceback.format_exc())
+            raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")

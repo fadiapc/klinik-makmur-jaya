@@ -281,7 +281,7 @@ export default function ApotekerVerifikasiPage() {
                       <td className="px-4 py-4">
                         <button
                           onClick={() => setImageModal({
-                            url: `${API_BASE}/${rx.image_url}`,
+                            url: `${API_BASE}/static/${rx.image_url}`,
                             code: rx.order_code,
                             name: rx.customer_name,
                             status: rx.status,

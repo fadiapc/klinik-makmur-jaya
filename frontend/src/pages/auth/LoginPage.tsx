@@ -36,10 +36,15 @@ export default function LoginPage() {
       login(access_token, user)
       
       // Navigate based on role
-      if (user.role.name.toLowerCase() === "pasien") {
+      const roleName = user.role.name.toLowerCase()
+      if (roleName === "pasien") {
         navigate("/catalog")
+      } else if (roleName === "apoteker") {
+        navigate("/apoteker")
+      } else if (roleName === "kasir") {
+        navigate("/pos")
       } else {
-        navigate("/dashboard")
+        navigate("/admin/dashboard") // admin
       }
     } catch (err: any) {
       let errorMsg = "Failed to connect to the server. Please ensure the backend is running."

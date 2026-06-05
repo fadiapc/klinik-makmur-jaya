@@ -19,7 +19,7 @@ export default function ApotekerLayout() {
 
   const roleName = user?.role?.name?.toLowerCase() || ""
   if (roleName !== "apoteker" && roleName !== "admin") {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/admin/dashboard" replace />
   }
 
   const navItems = [

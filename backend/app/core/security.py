@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # schemes list order matters: first scheme is the active hasher; the rest are
 # legacy schemes that verify() can still validate (useful for migrations).
 pwd_context = CryptContext(
-    schemes=["argon2"],
+    schemes=["argon2", "bcrypt"],
     deprecated="auto",
 )
 

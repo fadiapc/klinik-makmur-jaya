@@ -34,12 +34,20 @@ export default function ProtectedLayout() {
     return <Navigate to="/catalog" replace />
   }
 
+  const roleName = user?.role?.name?.toLowerCase() || ""
+  if (roleName === "apoteker") {
+    return <Navigate to="/apoteker" replace />
+  }
+  if (roleName === "kasir") {
+    return <Navigate to="/pos" replace />
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r flex flex-col shadow-sm">
         <div className="py-4 flex flex-col justify-center px-6 border-b h-20">
-          <Link to="/dashboard" className="flex items-center gap-3">
+          <Link to="/admin/dashboard" className="flex items-center gap-3">
             <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
             <div className="font-bold leading-tight">
               <span className="block text-slate-900 text-sm">Klinik</span>
@@ -54,7 +62,7 @@ export default function ProtectedLayout() {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          <Link to="/dashboard" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/dashboard' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
+          <Link to="/admin/dashboard" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location.pathname === '/admin/dashboard' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100'}`}>
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
