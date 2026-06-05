@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
                 <span className="text-sm text-slate-500">SKU: {product.sku}</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{product.name}</h1>
-              <p className="text-3xl font-extrabold text-blue-600 mb-6">
+              <p className="text-3xl font-extrabold text-teal-600 mb-6">
                 {formatIDR(product.price)}
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
                 <button 
                   onClick={handleAddToCart}
                   disabled={isAdding}
-                  className="flex-1 w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white h-12 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow"
+                  className="flex-1 w-full bg-teal-500 hover:bg-teal-600 disabled:opacity-70 text-white h-12 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow"
                 >
                   {isAdding ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

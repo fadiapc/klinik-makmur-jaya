@@ -95,7 +95,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading || otp.length < 4}
-              className="w-full flex justify-center items-center py-2.5 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70 transition-all"
+              className="w-full flex justify-center items-center py-2.5 px-4 rounded-lg shadow-sm text-sm font-medium text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-70 transition-all"
             >
               {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : "Verifikasi"}
             </button>
@@ -195,7 +195,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+            className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? (
               <>
@@ -209,7 +209,7 @@ export default function RegisterPage() {
           
           <div className="text-center text-sm text-slate-500 pt-2">
             Sudah punya akun?{" "}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-500 transition-colors">
               Masuk di sini
             </Link>
           </div>

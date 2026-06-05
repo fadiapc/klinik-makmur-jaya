@@ -88,7 +88,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium text-slate-700">Password</label>
-              <a href="#" className="text-sm text-blue-600 hover:text-blue-500 font-medium">Forgot password?</a>
+              <a href="#" className="text-sm text-teal-600 hover:text-teal-500 font-medium">Forgot password?</a>
             </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -108,7 +108,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+            className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-500 hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
           >
             {isLoading ? (
               <>
@@ -120,6 +120,13 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-sm text-slate-500">
+          Belum punya akun?{" "}
+          <Link to="/register" className="font-semibold text-teal-600 hover:text-teal-500 transition-colors">
+            Daftar di sini
+          </Link>
+        </div>
       </div>
     </div>
   )

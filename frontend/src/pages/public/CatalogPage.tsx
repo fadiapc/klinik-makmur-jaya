@@ -71,11 +71,15 @@ export default function CatalogPage() {
       if (search || searchQuery) params.set("q", search ?? searchQuery)
       if (selectedCategory) params.set("category_id", String(selectedCategory))
 
-      const url = `/products?${params.toString()}`
+      const queryString = params.toString()
+      const url = queryString ? `/products?${queryString}` : `/products`
+      
       const response = await api.get(url)
       setData(response.data)
     } catch (err: any) {
-      setError("Gagal memuat data katalog. Pastikan server backend berjalan.")
+      console.error("API Error in fetchProducts:", err)
+      const errorMsg = err.response?.data?.detail || err.message || "Pastikan server backend berjalan."
+      setError(`Gagal memuat data katalog. Detail: ${errorMsg}`)
     } finally {
       setIsLoading(false)
     }
@@ -114,15 +118,29 @@ export default function CatalogPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-[1400px]">
       
-      {/* Top Header / Search */}
+      {/* Top Header / Search / Filter */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Katalog Produk</h1>
           <p className="text-slate-500 text-sm mt-1">Temukan obat dan kebutuhan medis Anda.</p>
         </div>
         
-        <div className="w-full md:w-[500px]">
-          <form onSubmit={handleSearch} className="relative flex-1 flex gap-2">
+        <div className="w-full md:w-auto flex-1 max-w-2xl">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
+            
+            <select
+              value={selectedCategory === null ? "" : selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : null)}
+              className="block w-full sm:w-48 pl-3 pr-8 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <Search className="h-5 w-5" />
@@ -131,13 +149,14 @@ export default function CatalogPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
                 placeholder="Cari produk & obat di sini..."
               />
             </div>
+            
             <button 
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors shadow-sm"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-xl font-bold transition-colors shadow-sm flex-shrink-0"
             >
               Cari
             </button>
@@ -145,46 +164,10 @@ export default function CatalogPage() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col gap-8">
         
-        {/* Left Sidebar - Filters */}
-        <div className="w-full lg:w-64 flex-shrink-0">
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden sticky top-24">
-            <div className="p-4 border-b border-slate-100 bg-slate-50">
-              <h2 className="font-bold text-slate-800">Filter</h2>
-            </div>
-            <div className="p-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Kategori Produk</h3>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="category"
-                    className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
-                    checked={selectedCategory === null}
-                    onChange={() => setSelectedCategory(null)}
-                  />
-                  <span className="text-sm text-slate-600 group-hover:text-slate-900">Semua Kategori</span>
-                </label>
-                {categories.map((cat) => (
-                  <label key={cat.id} className="flex items-center gap-3 cursor-pointer group">
-                    <input
-                      type="radio"
-                      name="category"
-                      className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
-                      checked={selectedCategory === cat.id}
-                      onChange={() => setSelectedCategory(cat.id)}
-                    />
-                    <span className="text-sm text-slate-600 group-hover:text-slate-900">{cat.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Content - Product Grid */}
-        <div className="flex-1">
+        {/* Main Content - Product Grid */}
+        <div className="flex-1 w-full">
           {error && (
             <div className="p-4 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center gap-3 mb-6">
               <Info className="w-5 h-5" />
@@ -207,7 +190,7 @@ export default function CatalogPage() {
               <p className="text-slate-500 animate-pulse">Memuat katalog produk...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
               {data?.items.map((product) => (
                 <div 
                   key={product.id} 
@@ -230,23 +213,22 @@ export default function CatalogPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-5 flex flex-col flex-1 border-t border-slate-50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                  <div className="p-4 flex flex-col flex-1 border-t border-slate-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
                         {product.category.name}
+                      </span>
+                      <span className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded">
+                        Stok: {10 + (product.id % 50)}
                       </span>
                     </div>
                     
-                    <h3 className="font-bold text-slate-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors text-base leading-snug">
+                    <h3 className="font-bold text-slate-900 line-clamp-2 mb-2 group-hover:text-teal-600 transition-colors text-base leading-snug flex-1">
                       {product.name}
                     </h3>
                     
-                    <p className="text-xs text-slate-500 line-clamp-2 mb-4 flex-1">
-                      {product.description || "Tidak ada deskripsi."}
-                    </p>
-                    
-                    <div className="mt-auto pt-4 border-t border-slate-100">
-                      <span className="block text-2xl font-bold text-slate-900 mb-3">
+                    <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <span className="block text-lg font-bold text-slate-900">
                         {formatIDR(product.price)}
                       </span>
                       
@@ -256,22 +238,17 @@ export default function CatalogPage() {
                           handleAddToCart(product);
                         }}
                         disabled={addedItem === product.id}
-                        className={`w-full py-2.5 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                        title="Tambah ke Keranjang"
+                        className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                           addedItem === product.id 
                             ? "bg-green-100 text-green-700 border border-green-200" 
-                            : "bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md"
+                            : "bg-teal-500 hover:bg-teal-600 text-white shadow-sm hover:shadow-md"
                         }`}
                       >
                         {addedItem === product.id ? (
-                          <>
-                            <CheckCircle className="w-4 h-4" />
-                            Ditambahkan
-                          </>
+                          <CheckCircle className="w-5 h-5" />
                         ) : (
-                          <>
-                            <ShoppingCart className="w-4 h-4" />
-                            + Tambah Keranjang
-                          </>
+                          <ShoppingCart className="w-5 h-5" />
                         )}
                       </button>
                     </div>
