@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { api } from "../../lib/api"
-import { Loader2, Mail, Lock, User, Phone, CheckCircle } from "lucide-react"
+import { Loader2, Mail, Lock, User, Phone, CheckCircle, Eye, EyeOff } from "lucide-react"
 
 export default function RegisterPage() {
   const [name, setName] = useState("")
@@ -13,27 +13,56 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
   const [otp, setOtp] = useState("")
+  const [passwordError, setPasswordError] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [confirmPasswordError, setConfirmPasswordError] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const navigate = useNavigate()
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    setPasswordError(false)
+    setConfirmPasswordError(false)
+
+    if (password !== confirmPassword) {
+      setConfirmPasswordError(true);
+      return;
+    }
+
+    const minLength = password.length >= 8;
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSymbol = /[^A-Za-z0-9]/.test(password);
+
+    if (!minLength || !hasUpper || !hasLower || !hasNumber || !hasSymbol) {
+      setPasswordError(true);
+      return;
+    }
+
     setIsLoading(true)
 
     try {
       await api.post("/auth/register", {
         email,
         password,
+        confirm_password: confirmPassword,
         name,
         phone
       })
       setIsSuccess(true)
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 
-        "Gagal mendaftar. Silakan coba lagi."
-      )
+      let errorMessage = "Gagal mendaftar. Silakan coba lagi."
+      const detail = err.response?.data?.detail
+      if (Array.isArray(detail)) {
+        errorMessage = detail.map((d: any) => d.msg).join(", ")
+      } else if (typeof detail === "string") {
+        errorMessage = detail
+      }
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -181,15 +210,67 @@ export default function RegisterPage() {
                 <Lock className="h-5 w-5" />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  if (passwordError) setPasswordError(false)
+                }}
+                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                  passwordError 
+                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900" 
+                    : "border-slate-200 focus:ring-blue-500"
+                }`}
                 placeholder="••••••••"
                 required
-                minLength={8}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Konfirmasi Password</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <Lock className="h-5 w-5" />
+              </div>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  if (confirmPasswordError) setConfirmPasswordError(false)
+                }}
+                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
+                  confirmPasswordError 
+                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900" 
+                    : "border-slate-200 focus:ring-blue-500"
+                }`}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+            {confirmPasswordError && (
+              <p className="text-xs mt-1 text-red-600 font-medium">
+                Password tidak cocok.
+              </p>
+            )}
+            <p className={`text-xs mt-2 ${passwordError ? "text-red-600 font-medium" : "text-slate-500"}`}>
+              Password harus mengandung minimal 8 karakter, huruf besar, huruf kecil, angka, dan simbol.
+            </p>
           </div>
 
           <button

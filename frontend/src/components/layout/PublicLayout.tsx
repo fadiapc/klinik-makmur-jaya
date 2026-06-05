@@ -7,6 +7,7 @@ export default function PublicLayout() {
   const { isAuthenticated, logout, user } = useAuthStore()
   const { totalItems } = useCartStore()
   const location = useLocation()
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register"
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -55,22 +56,24 @@ export default function PublicLayout() {
               </Link>
             )}
             
-            <Link 
-              to="/cart" 
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
-                location.pathname === "/cart" ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden md:block">Keranjang</span>
-              {totalItems() > 0 && (
-                <span className="absolute top-1 right-1 md:-top-1 md:-right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
-                  {totalItems()}
-                </span>
-              )}
-            </Link>
+            {!isAuthPage && (
+              <Link 
+                to="/cart" 
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
+                  location.pathname === "/cart" ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span className="hidden md:block">Keranjang</span>
+                {totalItems() > 0 && (
+                  <span className="absolute top-1 right-1 md:-top-1 md:-right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                    {totalItems()}
+                  </span>
+                )}
+              </Link>
+            )}
             
-            <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
+            {!isAuthPage && <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>}
             
             {isAuthenticated ? (
               <div className="flex items-center gap-3 pl-2">
@@ -87,7 +90,7 @@ export default function PublicLayout() {
                 </button>
               </div>
             ) : (
-              <div className="ml-2 flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <Link 
                   to="/login" 
                   className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-9 py-2 px-4 shadow-sm"
