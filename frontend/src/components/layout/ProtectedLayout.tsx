@@ -1,7 +1,7 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { useWebSocket } from "../../hooks/useWebSocket"
-import { LogOut, LayoutDashboard, Package, ExternalLink, Users, ShieldCheck, X, FileText, Settings } from "lucide-react"
+import { LogOut, LayoutDashboard, Package, ExternalLink, Users, ShieldCheck, X, FileText } from "lucide-react"
 
 export default function ProtectedLayout() {
   const { isAuthenticated, user, logout } = useAuthStore()
@@ -67,18 +67,6 @@ export default function ProtectedLayout() {
               >
                 <ShieldCheck className="w-4 h-4" />
                 Audit Keamanan
-              </Link>
-
-              <Link
-                to="/admin/settings"
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname.startsWith("/admin/settings") 
-                    ? "bg-primary/10 text-primary" 
-                    : "text-slate-600 hover:bg-slate-100"
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                Pengaturan Sistem
               </Link>
             </>
           )}

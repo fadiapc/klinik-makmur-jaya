@@ -15,7 +15,6 @@ import DashboardPage from "./pages/dashboard/DashboardPage"
 import AdminProductsPage from "./pages/dashboard/AdminProductsPage"
 import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
 import AdminAuditLogPage from "./pages/dashboard/AdminAuditLogPage"
-import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage"
 import PosPage from "./pages/pos/PosPage"
 import ApotekerLayout from "./components/layout/ApotekerLayout"
 import ApotekerDashboardPage from "./pages/apoteker/ApotekerDashboardPage"
@@ -72,7 +71,6 @@ export default function App() {
             <Route path="/admin/products" element={<AdminProductsPage />} />
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/audit" element={<AdminAuditLogPage />} />
-            <Route path="/admin/settings" element={<AdminSettingsPage />} />
           </Route>
 
           {/* POS Routes (Kasir) */}
