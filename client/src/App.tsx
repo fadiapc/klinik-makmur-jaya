@@ -10,6 +10,9 @@ import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
 import AdminAuditLogPage from "./pages/dashboard/AdminAuditLogPage"
 import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage"
 import PosPage from "./pages/pos/PosPage"
+import ApotekerLayout from "./components/layout/ApotekerLayout"
+import ApotekerDashboardPage from "./pages/apoteker/ApotekerDashboardPage"
+import ApotekerVerifikasiPage from "./pages/apoteker/ApotekerVerifikasiPage"
 
 function App() {
   return (
@@ -24,6 +27,13 @@ function App() {
         {/* POS Routes (Kasir / Admin) */}
         <Route element={<PosLayout />}>
           <Route path="/pos" element={<PosPage />} />
+        </Route>
+
+        {/* Apoteker Routes */}
+        <Route element={<ApotekerLayout />}>
+          <Route path="/apoteker" element={<ApotekerDashboardPage />} />
+          <Route path="/apoteker/verifikasi" element={<ApotekerVerifikasiPage />} />
+          <Route path="/apoteker/produk" element={<AdminProductsPage />} />
         </Route>
         
         {/* Protected Routes (Dashboard) */}
