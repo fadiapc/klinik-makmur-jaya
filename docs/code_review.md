@@ -19,7 +19,7 @@ Secara keseluruhan, arsitektur *software* yang digunakan sangat modern dan memat
 Keamanan aplikasi sudah diimplementasikan dengan sangat baik, namun ada ruang untuk penyempurnaan:
 
 ✅ **Sudah Baik:**
-- Penggunaan **Bcrypt** untuk proses *hashing* kata sandi melalui `passlib`.
+- Penggunaan **Argon2** untuk proses *hashing* kata sandi melalui `passlib`.
 - Konfigurasi **JWT (JSON Web Tokens)** sebagai metode autentikasi yang *stateless*.
 - Penggunaan **UUID (Universally Unique Identifier)** untuk kunci utama (`Primary Key`) produk dan transaksi. Hal ini mencegah peretas menebak jumlah transaksi atau produk berdasarkan ID sekuensial (misal: `/orders/123`).
 - **Pembersihan Log:** Sistem tidak pernah mencetak (*print*) data sensitif (seperti *password hash*) ke dalam *console log*.

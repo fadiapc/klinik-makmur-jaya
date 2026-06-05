@@ -39,9 +39,9 @@ Aplikasi ini memiliki sistem multi-peran (Multi-Role) dengan alur kerja yang ter
 
 ### Backend
 *   **Framework:** FastAPI (Python 3)
-*   **Database:** SQLite (menggunakan SQLAlchemy ORM & Alembic untuk migrasi)
+*   **Database:** PostgreSQL (menggunakan SQLAlchemy ORM & Alembic untuk migrasi)
 *   **Validasi Data:** Pydantic
-*   **Autentikasi:** JWT (JSON Web Tokens) & Passlib (Bcrypt)
+*   **Autentikasi:** JWT (JSON Web Tokens) & Passlib (Argon2)
 *   **Real-time:** WebSockets
 
 ## 🚀 Cara Instalasi & Menjalankan Aplikasi
@@ -94,12 +94,12 @@ Frontend akan berjalan di `http://localhost:5173`.
 
 Jika Anda telah menjalankan skrip `full_seed.py`, Anda dapat *login* menggunakan akun berikut:
 
-| Peran | Username | Password |
+| Peran | Email (Username) | Password |
 | :--- | :--- | :--- |
-| **System Admin** | `admin` | `password123` |
-| **Apoteker** | `apoteker1` | `password123` |
-| **Kasir** | `kasir1` | `password123` |
-| **Pasien** | `fadia` | `password123` |
+| **System Admin** | `admin@klinikmakmur.id` | `Password123!` |
+| **Apoteker** | `apoteker@klinikmakmur.id` | `Password123!` |
+| **Kasir** | `kasir@klinikmakmur.id` | `Password123!` |
+| **Pasien** | `andi@example.com` | `Password123!` |
 
 ## 📂 Struktur Direktori
 

@@ -41,7 +41,7 @@ Ruang lingkup pekerjaan (Scope) dipecah menjadi beberapa fase terukur:
 
 ## 3. Jadwal Proyek (Timeline)
 Estimasi penyelesaian adalah 4 Minggu (1 Bulan/Sprint).
-- **Minggu 1:** Finalisasi *Project Charter*, penyusunan dokumen arsitektur, dan inisialisasi basis data *PostgreSQL / SQLite*.
+- **Minggu 1:** Finalisasi *Project Charter*, penyusunan dokumen arsitektur, dan inisialisasi basis data *PostgreSQL*.
 - **Minggu 2:** Pengerjaan *Backend* API (FastAPI) untuk pengelolaan Pengguna, Produk, dan Keranjang Belanja.
 - **Minggu 3:** Integrasi *Frontend* (React), perakitan tampilan POS, dan halaman *Checkout*.
 - **Minggu 4:** Pemasangan *WebSocket*, penyelesaian *Bug*, dan pengesahan dokumen Manajemen (termasuk *Cutover* & Skenario *Update*).
@@ -51,7 +51,7 @@ Estimasi penyelesaian adalah 4 Minggu (1 Bulan/Sprint).
 ## 4. Quality Checklist (Daftar Periksa Kualitas)
 | Fitur / Modul | Kriteria Penerimaan (*Acceptance Criteria*) | Status |
 | :--- | :--- | :---: |
-| Keamanan Akun | Kata sandi di-*hash* dengan `bcrypt`, token JWT aktif | ✅ Lulus |
+| Keamanan Akun | Kata sandi di-*hash* dengan `Argon2`, token JWT aktif | ✅ Lulus |
 | Manajemen Stok | Stok berkurang dari *batch* paling lama terlebih dahulu (FIFO) | ✅ Lulus |
 | Verifikasi Resep | Transaksi obat keras mewajibkan pasien mengunggah gambar | ✅ Lulus |
 | Kinerja UI | Dasbor tidak *freeze* saat mengambil data; *loading spinner* berfungsi | ✅ Lulus |

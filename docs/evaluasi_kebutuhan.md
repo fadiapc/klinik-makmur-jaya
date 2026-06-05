@@ -10,7 +10,7 @@ Dokumen ini merupakan hasil tinjauan komprehensif (*gap analysis*) yang membandi
 | :--- | :---: | :--- |
 | a. Login multi-level | ✅ Selesai | Role *Admin, Apoteker, Kasir, Pasien* sudah diimplementasikan dengan pemisahan *layout* (React Router) dan penjagaan hak akses di level API (FastAPI Dependencies). |
 | b. Registrasi & Verifikasi Email | ⚠️ Sebagian | Fitur registrasi berhasil dibuat, namun **verifikasi email belum berjalan**. Saat ini belum ada integrasi SMTP/Email service (seperti SendGrid/Nodemailer) untuk mengirim tautan OTP/Token. |
-| c. Password Hashing & Validasi | ⚠️ Sebagian | Hashing menggunakan `bcrypt` sudah selesai. Namun, **validasi kekuatan sandi** (minimal 8 karakter, kombinasi huruf besar/angka/simbol) belum diatur secara ketat di *Frontend* maupun *Backend*. |
+| c. Password Hashing & Validasi | ⚠️ Sebagian | Hashing menggunakan `Argon2` sudah selesai. Namun, **validasi kekuatan sandi** (minimal 8 karakter, kombinasi huruf besar/angka/simbol) belum diatur secara ketat di *Frontend* maupun *Backend*. |
 | d. Proteksi SQLi, XSS, CSRF | ✅ Selesai | *SQLAlchemy* mencegah *SQL Injection*. React secara bawaan menangani *XSS*. Pendekatan *stateless JWT Token* (tanpa *cookies*) membuat sistem kebal dari serangan CSRF tradisional. |
 | e. Session Management & Timeout | ✅ Selesai | JWT Token sudah disetel dengan masa kedaluwarsa (misal: 24 jam), pengguna akan *logout* otomatis ketika token habis. |
 | f. Audit Log (Siapa, Kapan, Apa) | ✅ Selesai | Tabel `AuditLog` sudah mencatat setiap perubahan menggunakan format *JSONB* untuk nilai sebelum dan sesudahnya. |
@@ -62,11 +62,11 @@ Dokumen ini merupakan hasil tinjauan komprehensif (*gap analysis*) yang membandi
 | Arsitektur Infrastruktur | ✅ Selesai | Ada (`arsitektur_perangkat_keras.md`) |
 | Spesifikasi Minimum | ✅ Selesai | Ada (`spesifikasi_minimum_server.md`) |
 | Analisis Tools/Framework | ✅ Selesai | Ada (`analisis_pemilihan_teknologi.md`) |
-| Skenario Migrasi & Cutover | ❌ Belum | Harus disusun. |
-| Skenario Update & Dampak Perubahan | ❌ Belum | Harus disusun. |
-| User Guide & FAQ | ❌ Belum | Harus disusun. |
+| Skenario Migrasi & Cutover | ✅ Selesai | Ada (`skenario_migrasi_cutover.md`) |
+| Skenario Update & Dampak Perubahan | ✅ Selesai | Ada (`skenario_update_dampak_perubahan.md`) |
+| User Guide & FAQ | ✅ Selesai | Ada (`user_guide_faq.md`) |
 | Dokumentasi API (Swagger) | ✅ Selesai | FastAPI menyediakannya otomatis via `/api/docs`. |
-| Troubleshooting Guide | ❌ Belum | Harus disusun. |
+| Troubleshooting Guide | ✅ Selesai | Ada (`troubleshooting_guide.md`) |
 
 ---
 

@@ -34,9 +34,9 @@ Lapis *Backend* difokuskan pada kecepatan pemrosesan data, konkurensi (menangani
 - **Peran:** Sistem Manajemen Basis Data Relasional (RDBMS) Utama.
 - **Alasan Pemilihan:** Berlisensi *open-source*, sepenuhnya memenuhi standar ACID (Atomicity, Consistency, Isolation, Durability) yang mutlak dibutuhkan dalam aplikasi finansial/POS e-commerce. Memiliki fitur pelacakan *JSONB* yang kuat apabila dibutuhkan penyimpanan data dinamis.
 
-### F. PyJWT & Passlib (Bcrypt)
+### F. PyJWT & Passlib (Argon2)
 - **Peran:** Autentikasi token dan enkripsi (hashing) sandi.
-- **Alasan Pemilihan:** JWT memungkinkan aplikasi berjalan tanpa status (*stateless*), menghemat memori *server*. Passlib dengan Bcrypt memastikan bahwa jika terjadi peretasan *database*, kata sandi pengguna tidak dapat dibaca karena berbentuk teks acak.
+- **Alasan Pemilihan:** JWT memungkinkan aplikasi berjalan tanpa status (*stateless*), menghemat memori *server*. Passlib dengan Argon2 memastikan bahwa jika terjadi peretasan *database*, kata sandi pengguna tidak dapat dibaca karena berbentuk teks acak (bahkan Argon2 dirancang khusus agar tahan terhadap serangan dari GPU canggih).
 
 ---
 

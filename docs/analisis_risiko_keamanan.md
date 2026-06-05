@@ -11,7 +11,7 @@ Pihak tidak berwenang berhasil masuk ke dalam sistem menggunakan kredensial peng
 
 **Langkah Mitigasi:**
 - **Autentikasi Berbasis Token:** Penggunaan JWT (*JSON Web Token*) dengan masa aktif yang terbatas untuk sesi pengguna.
-- **Enkripsi Kata Sandi:** Menyimpan kata sandi menggunakan algoritma *hashing* yang kuat (Bcrypt) dan teknik *salting*, sehingga kata sandi asli tidak pernah tersimpan di *database*.
+- **Enkripsi Kata Sandi:** Menyimpan kata sandi menggunakan algoritma *hashing* yang kuat (Argon2) dan teknik *salting*, sehingga kata sandi asli tidak pernah tersimpan di *database*.
 - **Role-Based Access Control (RBAC):** Membatasi hak akses pengguna secara ketat berdasarkan peran mereka (Admin, Apoteker, Kasir, Pasien). Pengguna hanya dapat mengakses API dan halaman yang diizinkan untuk perannya.
 - **Kebijakan Kata Sandi Kuat:** Mewajibkan pengguna menggunakan kombinasi huruf besar, huruf kecil, angka, dan karakter khusus.
 
