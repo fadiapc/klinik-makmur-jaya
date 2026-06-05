@@ -96,8 +96,8 @@ export default function CustomerLayout() {
       
       <footer className="border-t py-6 bg-white mt-auto">
         <div className="container mx-auto px-4 flex flex-col items-center justify-center gap-4">
-          <p className="text-center text-sm text-slate-500">
-            © 2025 Klinik Makmur Jaya. All rights reserved.
+          <p className="text-center text-sm text-slate-500 w-full">
+            © 2026 Klinik Makmur Jaya. All rights reserved.
           </p>
         </div>
       </footer>

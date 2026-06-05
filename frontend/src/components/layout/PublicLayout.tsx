@@ -111,9 +111,9 @@ export default function PublicLayout() {
       </main>
       
       <footer className="border-t py-6 md:py-0 bg-white">
-        <div className="container mx-auto px-4 flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © 2025 Klinik Makmur Jaya. All rights reserved.
+        <div className="container mx-auto px-4 flex flex-col items-center justify-center gap-4 md:h-16 md:flex-row">
+          <p className="text-center text-sm leading-loose text-muted-foreground w-full">
+            © 2026 Klinik Makmur Jaya. All rights reserved.
           </p>
         </div>
       </footer>
