@@ -41,10 +41,17 @@ export default function LoginPage() {
         navigate("/dashboard")
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 
-        "Failed to connect to the server. Please ensure the backend is running."
-      )
+      let errorMsg = "Failed to connect to the server. Please ensure the backend is running."
+      if (err.response?.data?.detail) {
+        if (typeof err.response.data.detail === "string") {
+          errorMsg = err.response.data.detail
+        } else if (Array.isArray(err.response.data.detail)) {
+          errorMsg = err.response.data.detail.map((e: any) => e.msg).join(", ")
+        } else {
+          errorMsg = JSON.stringify(err.response.data.detail)
+        }
+      }
+      setError(errorMsg)
     } finally {
       setIsLoading(false)
     }

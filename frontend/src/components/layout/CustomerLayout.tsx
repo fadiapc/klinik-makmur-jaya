@@ -26,7 +26,7 @@ export default function CustomerLayout() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="w-full max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/catalog" className="flex items-center gap-3">
             <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
             <div className="text-xl font-bold leading-tight hidden md:block">

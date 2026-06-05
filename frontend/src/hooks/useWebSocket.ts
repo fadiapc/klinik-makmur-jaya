@@ -2,16 +2,20 @@ import { useEffect, useState, useCallback } from "react"
 import { useAuthStore } from "../store/authStore"
 
 interface WebSocketAlert {
+  id?: string
+  timestamp?: number
   type: string
   level: "info" | "success" | "warning" | "error"
   title: string
   message: string
   link?: string
+  read?: boolean
 }
 
 export function useWebSocket() {
   const { token, isAuthenticated } = useAuthStore()
   const [lastAlert, setLastAlert] = useState<WebSocketAlert | null>(null)
+  const [notifications, setNotifications] = useState<WebSocketAlert[]>([])
   const [isConnected, setIsConnected] = useState(false)
 
   const connect = useCallback(() => {
@@ -37,7 +41,9 @@ export function useWebSocket() {
       try {
         const data: WebSocketAlert = JSON.parse(event.data)
         if (data.type === "alert") {
-          setLastAlert(data)
+          const newAlert = { ...data, id: Math.random().toString(36).substring(7), timestamp: Date.now(), read: false }
+          setLastAlert(newAlert)
+          setNotifications(prev => [newAlert, ...prev].slice(0, 20))
         }
       } catch (err) {
         console.error("Failed to parse WebSocket message", err)
@@ -63,6 +69,14 @@ export function useWebSocket() {
   }, [connect])
 
   const clearAlert = () => setLastAlert(null)
+  
+  const markAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  }
+  
+  const clearAllNotifications = () => {
+    setNotifications([])
+  }
 
-  return { isConnected, lastAlert, clearAlert }
+  return { isConnected, lastAlert, clearAlert, notifications, markAsRead, clearAllNotifications }
 }

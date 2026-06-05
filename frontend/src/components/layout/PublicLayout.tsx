@@ -1,75 +1,102 @@
-import { Outlet, Link } from "react-router-dom"
+import { Outlet, Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../store/authStore"
 import { useCartStore } from "../../store/cartStore"
-import { LogOut, ShoppingCart } from "lucide-react"
+import { LogOut, ShoppingCart, User, Package, ClipboardList, LayoutDashboard } from "lucide-react"
 
 export default function PublicLayout() {
   const { isAuthenticated, logout, user } = useAuthStore()
   const { totalItems } = useCartStore()
+  const location = useLocation()
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
         <div className="w-full max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/catalog" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
-            <div className="text-2xl md:text-3xl font-bold leading-tight">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <div className="text-xl font-bold leading-tight hidden md:block">
               <span className="text-slate-900">Klinik </span>
               <span className="text-primary">Makmur Jaya</span>
             </div>
           </Link>
           
-          <nav className="flex items-center gap-4">
-            <div className="flex items-center gap-6">
-              <Link to="/catalog" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
-                Katalog
+          <nav className="flex items-center gap-2 md:gap-4">
+            <Link 
+              to="/catalog" 
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname.startsWith("/catalog") ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span className="hidden md:block">Katalog</span>
+            </Link>
+
+            {isAuthenticated && user?.role?.name === "pasien" && (
+              <Link 
+                to="/orders" 
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname.startsWith("/orders") ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+                <span className="hidden md:block">Pesanan Saya</span>
               </Link>
-              
-              <Link to="/cart" className="relative text-slate-600 hover:text-teal-600 transition-colors p-1 flex items-center">
-                <ShoppingCart className="w-5 h-5" />
-                {totalItems() > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
-                    {totalItems()}
-                  </span>
-                )}
+            )}
+
+            {isAuthenticated && user?.role?.name !== "pasien" && (
+              <Link 
+                to="/dashboard" 
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname.startsWith("/dashboard") ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden md:block">Dashboard</span>
               </Link>
-            </div>
+            )}
             
-            <div className="h-6 w-px bg-slate-200 mx-2"></div>
+            <Link 
+              to="/cart" 
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
+                location.pathname === "/cart" ? "text-teal-600 bg-teal-50" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span className="hidden md:block">Keranjang</span>
+              {totalItems() > 0 && (
+                <span className="absolute top-1 right-1 md:-top-1 md:-right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full">
+                  {totalItems()}
+                </span>
+              )}
+            </Link>
+            
+            <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
             
             {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                {user?.role.name === "pasien" && (
-                  <Link to="/orders" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
-                    Pesanan Saya
-                  </Link>
-                )}
-                {user?.role.name !== "pasien" && (
-                  <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors">
-                    Dashboard
-                  </Link>
-                )}
-                <div className="h-4 w-px bg-slate-200"></div>
-                <span className="text-sm font-medium text-slate-900">{user?.name}</span>
+              <div className="flex items-center gap-3 pl-2">
+                <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold">
+                  <User className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-semibold text-slate-900 hidden md:block">{user?.name}</span>
                 <button 
                   onClick={() => logout()}
-                  className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Logout"
                 >
-                  <LogOut className="w-4 h-4" />
-                  Logout
+                  <LogOut className="w-5 h-5" />
                 </button>
               </div>
             ) : (
-              <div className="ml-4 flex items-center gap-2">
+              <div className="ml-2 flex items-center gap-2">
                 <Link 
                   to="/login" 
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-10 py-2 px-4 shadow-sm"
+                  className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 h-9 py-2 px-4 shadow-sm"
                 >
                   Masuk
                 </Link>
                 <Link 
                   to="/register" 
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-teal-500 text-white hover:bg-teal-600 h-10 py-2 px-4 shadow-sm"
+                  className="inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-teal-500 text-white hover:bg-teal-600 h-9 py-2 px-4 shadow-sm"
                 >
                   Daftar
                 </Link>
