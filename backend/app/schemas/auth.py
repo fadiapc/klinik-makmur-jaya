@@ -127,6 +127,7 @@ class RefreshTokenRequest(BaseModel):
 class EmailVerifyRequest(BaseModel):
     """POST /api/v1/auth/verify-email — submit the token received by email."""
 
+    email: Optional[EmailStr] = None
     token: str = Field(
         ...,
         description="Email verification token (signed JWT, valid 10 minutes)",

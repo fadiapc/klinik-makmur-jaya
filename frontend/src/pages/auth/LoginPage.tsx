@@ -134,14 +134,13 @@ export default function LoginPage() {
               "Sign in"
             )}
           </button>
+          <div className="text-center text-sm text-slate-500 pt-2">
+            Belum punya akun?{" "}
+            <Link to="/register" className="font-semibold text-teal-600 hover:text-teal-500 transition-colors">
+              Daftar di sini
+            </Link>
+          </div>
         </form>
-
-        <div className="mt-6 text-center text-sm text-slate-500">
-          Belum punya akun?{" "}
-          <Link to="/register" className="font-semibold text-teal-600 hover:text-teal-500 transition-colors">
-            Daftar di sini
-          </Link>
-        </div>
       </div>
     </div>
   )

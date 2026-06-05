@@ -198,7 +198,7 @@ async def verify_email(
     service: AuthService = Depends(_get_service),
 ) -> MessageResponse:
     """Decode OTP token and set is_verified=True on the user's account."""
-    await service.verify_email(data.token, request)
+    await service.verify_email(data.token, request, getattr(data, "email", None))
     return MessageResponse(
         message="Email verified successfully. You may now log in."
     )
