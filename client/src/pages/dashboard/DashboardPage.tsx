@@ -1,6 +1,6 @@
 import { useAuthStore } from "../../store/authStore"
 import { useState } from "react"
-import { Users, Package, ShoppingCart, Activity, FileText, Download, Loader2 } from "lucide-react"
+import { Users, Package, ShoppingCart, Activity, FileText, Loader2 } from "lucide-react"
 import { api } from "../../lib/api"
 
 export default function DashboardPage() {

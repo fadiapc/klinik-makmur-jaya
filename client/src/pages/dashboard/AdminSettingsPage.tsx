@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Save, Bell, Clock, ShieldAlert, Loader2 } from "lucide-react"
+import { Save, Bell, ShieldAlert, Loader2 } from "lucide-react"
 import { api } from "../../lib/api"
 
 export default function AdminSettingsPage() {

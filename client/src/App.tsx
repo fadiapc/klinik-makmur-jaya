@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import PublicLayout from "./components/layout/PublicLayout"
 import ProtectedLayout from "./components/layout/ProtectedLayout"
+import PosLayout from "./components/layout/PosLayout"
 import LoginPage from "./pages/auth/LoginPage"
 import CatalogPage from "./pages/public/CatalogPage"
 import DashboardPage from "./pages/dashboard/DashboardPage"
@@ -8,6 +9,7 @@ import AdminProductsPage from "./pages/dashboard/AdminProductsPage"
 import AdminUsersPage from "./pages/dashboard/AdminUsersPage"
 import AdminAuditLogPage from "./pages/dashboard/AdminAuditLogPage"
 import AdminSettingsPage from "./pages/dashboard/AdminSettingsPage"
+import PosPage from "./pages/pos/PosPage"
 
 function App() {
   return (
@@ -18,6 +20,10 @@ function App() {
           <Route path="/" element={<Navigate to="/catalog" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/catalog" element={<CatalogPage />} />
+        </Route>
+        {/* POS Routes (Kasir / Admin) */}
+        <Route element={<PosLayout />}>
+          <Route path="/pos" element={<PosPage />} />
         </Route>
         
         {/* Protected Routes (Dashboard) */}
