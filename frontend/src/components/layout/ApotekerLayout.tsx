@@ -25,6 +25,7 @@ export default function ApotekerLayout() {
   const navItems = [
     { to: "/apoteker", label: "Dashboard", icon: LayoutDashboard, exact: true },
     { to: "/apoteker/verifikasi", label: "Riwayat Resep", icon: ClipboardList },
+    { to: "/apoteker/orders", label: "Pengiriman Pesanan", icon: Package },
     { to: "/apoteker/produk", label: "Kelola Produk", icon: Package },
   ]
 

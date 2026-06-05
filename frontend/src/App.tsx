@@ -20,6 +20,7 @@ import PosPage from "./pages/pos/PosPage"
 import KasirOrdersPage from "./pages/pos/KasirOrdersPage"
 import ApotekerLayout from "./components/layout/ApotekerLayout"
 import ApotekerDashboardPage from "./pages/apoteker/ApotekerDashboardPage"
+import ApotekerOrdersPage from "./pages/apoteker/ApotekerOrdersPage"
 import ApotekerVerifikasiPage from "./pages/apoteker/ApotekerVerifikasiPage"
 
 
@@ -98,6 +99,7 @@ export default function App() {
           {/* Apoteker Routes */}
           <Route element={<ApotekerLayout />}>
             <Route path="/apoteker" element={<ApotekerDashboardPage />} />
+            <Route path="/apoteker/orders" element={<ApotekerOrdersPage />} />
             <Route path="/apoteker/verifikasi/:id" element={<ApotekerVerifikasiPage />} />
           </Route>
         </Routes>
