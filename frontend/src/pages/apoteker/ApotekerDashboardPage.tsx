@@ -121,14 +121,17 @@ export default function ApotekerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="p-6 space-y-6 animate-in fade-in duration-200">
+        <div className="h-8 w-48 bg-slate-200 animate-pulse rounded mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1,2,3].map(i => <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-xl"></div>)}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-6 space-y-6 animate-in fade-in duration-200">
 
       {/* Header */}
       <div className="flex items-start justify-between">

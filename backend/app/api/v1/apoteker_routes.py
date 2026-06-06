@@ -31,6 +31,7 @@ from app.models.models import (
     StockBatch,
     User,
 )
+from app.schemas.apoteker import StockBatchCreate, StockBatchResponse
 
 logger = logging.getLogger(__name__)
 
@@ -333,7 +334,95 @@ async def get_prescription_history(
                 rejection_reason=p.rejection_reason,
                 pharmacist_name=pharmacist_name,
                 uploaded_at=p.created_at.isoformat() if p.created_at else "",
-                verified_at=p.verified_at.isoformat() if p.verified_at else None,
             )
         )
     return items
+
+@router.post(
+    "/batches",
+    response_model=StockBatchResponse,
+    summary="Create a new stock batch",
+    description="Allows Apoteker to receive new stock batches for a product.",
+)
+async def create_stock_batch(
+    data: StockBatchCreate,
+    current_user: User = Depends(RequireAdminOrApoteker),
+    db: AsyncSession = Depends(get_db),
+) -> StockBatchResponse:
+    from fastapi import HTTPException
+    
+    # Verify product exists
+    product_result = await db.execute(select(Product).where(Product.id == data.product_id))
+    product = product_result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    new_batch = StockBatch(
+        product_id=data.product_id,
+        batch_number=data.batch_number,
+        quantity=data.quantity,
+        purchase_price=data.purchase_price,
+        expiry_date=data.expiry_date
+    )
+    db.add(new_batch)
+    await db.commit()
+    await db.refresh(new_batch)
+    
+    return StockBatchResponse(
+        id=new_batch.id,
+        product_id=new_batch.product_id,
+        product_name=product.name,
+        batch_number=new_batch.batch_number,
+        quantity=new_batch.quantity,
+        purchase_price=new_batch.purchase_price,
+        expiry_date=new_batch.expiry_date,
+        received_at=new_batch.received_at.isoformat() if new_batch.received_at else ""
+    )
+
+@router.get(
+    "/batches",
+    response_model=List[StockBatchResponse],
+    summary="List all stock batches",
+    description="Returns all stock batches, optionally filtered by search.",
+)
+async def get_all_stock_batches(
+    search: Optional[str] = Query(default=None, description="Search by product name or batch number"),
+    current_user: User = Depends(RequireAdminOrApoteker),
+    db: AsyncSession = Depends(get_db),
+) -> List[StockBatchResponse]:
+    from sqlalchemy import or_
+    
+    stmt = (
+        select(StockBatch)
+        .join(Product, Product.id == StockBatch.product_id)
+        .options(selectinload(StockBatch.product))
+        .order_by(StockBatch.expiry_date.asc().nulls_last())
+    )
+    
+    if search:
+        search_term = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Product.name.ilike(search_term),
+                StockBatch.batch_number.ilike(search_term),
+            )
+        )
+        
+    result = await db.execute(stmt)
+    batches = result.scalars().all()
+    
+    items = []
+    for b in batches:
+        items.append(StockBatchResponse(
+            id=b.id,
+            product_id=b.product_id,
+            product_name=b.product.name if b.product else "-",
+            batch_number=b.batch_number,
+            quantity=b.quantity,
+            purchase_price=float(b.purchase_price),
+            expiry_date=b.expiry_date,
+            received_at=b.received_at.isoformat() if b.received_at else ""
+        ))
+        
+    return items
+

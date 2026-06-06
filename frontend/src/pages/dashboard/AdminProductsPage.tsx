@@ -88,7 +88,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6 animate-in fade-in duration-500">
+    <div className="p-8 space-y-6 animate-in fade-in duration-200">
       
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

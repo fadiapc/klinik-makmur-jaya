@@ -172,8 +172,16 @@ export default function OrderHistoryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-32">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+      <div className="container mx-auto px-4 py-8 max-w-[1400px]">
+        <div className="mb-8">
+          <div className="h-8 w-48 bg-slate-200 animate-pulse rounded mb-2"></div>
+          <div className="h-4 w-96 bg-slate-100 animate-pulse rounded"></div>
+        </div>
+        <div className="space-y-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-2xl border border-slate-100"></div>
+          ))}
+        </div>
       </div>
     )
   }

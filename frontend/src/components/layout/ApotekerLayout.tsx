@@ -26,6 +26,7 @@ export default function ApotekerLayout() {
     { to: "/apoteker/verifikasi", label: "Riwayat Resep", icon: ClipboardList },
     { to: "/apoteker/orders", label: "Pengiriman Pesanan", icon: Package },
     { to: "/apoteker/produk", label: "Kelola Produk", icon: Package },
+    { to: "/apoteker/stok", label: "Kelola Stok Batch", icon: ClipboardList },
   ]
 
   return (

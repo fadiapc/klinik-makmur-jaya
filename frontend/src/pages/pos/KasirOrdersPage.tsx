@@ -102,7 +102,7 @@ export default function KasirOrdersPage() {
   const pendingCount = orders.filter(o => o.status === "menunggu_konfirmasi_kasir").length
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-6 space-y-6 animate-in fade-in duration-200">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -164,8 +164,10 @@ export default function KasirOrdersPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="p-6 space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-slate-50 animate-pulse rounded-lg w-full" />
+            ))}
           </div>
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">

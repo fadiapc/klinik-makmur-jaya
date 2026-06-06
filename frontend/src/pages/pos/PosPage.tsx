@@ -161,7 +161,7 @@ export default function PosPage() {
               <p>Tidak ada produk yang cocok dengan pencarian.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-in fade-in duration-200">
               {filteredProducts.map((product) => (
                 <button
                   key={product.id}

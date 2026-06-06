@@ -22,6 +22,7 @@ import ApotekerLayout from "./components/layout/ApotekerLayout"
 import ApotekerDashboardPage from "./pages/apoteker/ApotekerDashboardPage"
 import ApotekerOrdersPage from "./pages/apoteker/ApotekerOrdersPage"
 import ApotekerVerifikasiPage from "./pages/apoteker/ApotekerVerifikasiPage"
+import ApotekerBatchesPage from "./pages/apoteker/ApotekerBatchesPage"
 
 
 function RoleRedirect() {
@@ -101,6 +102,8 @@ export default function App() {
             <Route path="/apoteker" element={<ApotekerDashboardPage />} />
             <Route path="/apoteker/orders" element={<ApotekerOrdersPage />} />
             <Route path="/apoteker/verifikasi/:id" element={<ApotekerVerifikasiPage />} />
+            <Route path="/apoteker/stok" element={<ApotekerBatchesPage />} />
+            <Route path="/apoteker/produk" element={<AdminProductsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

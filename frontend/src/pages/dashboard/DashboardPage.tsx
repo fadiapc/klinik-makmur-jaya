@@ -85,7 +85,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 space-y-8 animate-in fade-in duration-200">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
@@ -111,17 +111,6 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {isLoading ? (
-        <div className="h-40 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {stats.map((stat, i) => (
-              <div key={i} className="p-6 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between">
-                  <div>
                     <p className="text-sm font-medium text-slate-500">{stat.title}</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
                   </div>

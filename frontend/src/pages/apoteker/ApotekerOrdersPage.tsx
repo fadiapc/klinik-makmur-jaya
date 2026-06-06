@@ -87,7 +87,7 @@ export default function ApotekerOrdersPage() {
   const pendingCount = orders.filter(o => o.status === "diproses").length
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-6 space-y-6 animate-in fade-in duration-200">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
@@ -149,8 +149,11 @@ export default function ApotekerOrdersPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <div className="p-6 space-y-6 animate-in fade-in duration-200">
+            <div className="h-8 w-48 bg-slate-200 animate-pulse rounded mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-slate-100 animate-pulse rounded-xl"></div>)}
+            </div>
           </div>
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400">

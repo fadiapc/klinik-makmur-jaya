@@ -130,7 +130,7 @@ export default function ApotekerVerifikasiPage() {
   const pendingCount = records.filter(r => r.status === "pending").length
 
   return (
-    <div className="p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="p-6 space-y-6 animate-in fade-in duration-200">
 
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-3">
