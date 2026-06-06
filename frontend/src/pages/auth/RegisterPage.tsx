@@ -8,7 +8,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
-  
+
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [confirmPasswordError, setConfirmPasswordError] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  
+
   const navigate = useNavigate()
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -72,20 +72,20 @@ export default function RegisterPage() {
     e.preventDefault()
     setError("")
     setIsLoading(true)
-    
+
     try {
       // Mocking OTP verification for now based on user's instruction.
       // Usually this would call POST /api/v1/auth/verify-email with { email, token: otp }
       await api.post("/auth/verify-email", { email, token: otp })
-      
+
       // If successful, redirect to login
       navigate("/login", { state: { message: "Registrasi berhasil! Silakan login." } })
     } catch (err: any) {
       // For dummy purpose, if backend fails, we still allow passing if OTP is exactly '123456'
       if (otp === '123456') {
-         navigate("/login", { state: { message: "Registrasi berhasil! Silakan login." } })
+        navigate("/login", { state: { message: "Registrasi berhasil! Silakan login." } })
       } else {
-         setError(err.response?.data?.detail || "Kode OTP salah atau kadaluarsa. Coba 123456 untuk simulasi.")
+        setError(err.response?.data?.detail || "Kode OTP salah atau kadaluarsa. Coba 123456 untuk simulasi.")
       }
     } finally {
       setIsLoading(false)
@@ -105,9 +105,9 @@ export default function RegisterPage() {
               Kami telah mengirimkan kode OTP ke <strong>{email}</strong>. (Untuk simulasi, ketik apapun atau '123456')
             </p>
           </div>
-          
+
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-             {error && (
+            {error && (
               <div className="p-3 rounded-md bg-red-50 text-red-600 text-sm font-medium border border-red-100">
                 {error}
               </div>
@@ -137,7 +137,7 @@ export default function RegisterPage() {
   return (
     <div className="flex-1 flex items-center justify-center p-4 py-12">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-        
+
         {/* Header */}
         <div className="p-8 pb-6 text-center bg-slate-50 border-b border-slate-100">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Buat Akun</h1>
@@ -216,11 +216,10 @@ export default function RegisterPage() {
                   setPassword(e.target.value)
                   if (passwordError) setPasswordError(false)
                 }}
-                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
-                  passwordError 
-                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900" 
+                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${passwordError
+                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900"
                     : "border-slate-200 focus:ring-blue-500"
-                }`}
+                  }`}
                 placeholder="••••••••"
                 required
               />
@@ -247,11 +246,10 @@ export default function RegisterPage() {
                   setConfirmPassword(e.target.value)
                   if (confirmPasswordError) setConfirmPasswordError(false)
                 }}
-                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${
-                  confirmPasswordError 
-                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900" 
+                className={`block w-full pl-10 pr-10 py-2 border rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-shadow ${confirmPasswordError
+                    ? "border-red-500 focus:ring-red-500 bg-red-50 text-red-900"
                     : "border-slate-200 focus:ring-blue-500"
-                }`}
+                  }`}
                 placeholder="••••••••"
                 required
               />
@@ -287,7 +285,7 @@ export default function RegisterPage() {
               "Daftar"
             )}
           </button>
-          
+
           <div className="text-center text-sm text-slate-500 pt-2">
             Sudah punya akun?{" "}
             <Link to="/login" className="font-semibold text-teal-600 hover:text-teal-500 transition-colors">
