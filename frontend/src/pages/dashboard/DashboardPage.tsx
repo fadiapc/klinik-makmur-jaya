@@ -111,6 +111,23 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {isLoading ? (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1,2,3,4].map(i => <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-xl"></div>)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <div className="h-96 bg-slate-50 animate-pulse rounded-xl"></div>
+            <div className="h-96 bg-slate-50 animate-pulse rounded-xl"></div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <div key={i} className="p-6 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div>
                     <p className="text-sm font-medium text-slate-500">{stat.title}</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
                   </div>

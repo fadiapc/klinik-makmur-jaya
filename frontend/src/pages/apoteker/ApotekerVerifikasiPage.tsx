@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react"
 import { api } from "../../lib/api"
 import {
   ClipboardList, CheckCircle, XCircle, Loader2, Eye, RefreshCw, Clock,
-  Search, ChevronLeft, ChevronRight, Filter
+  Search, ChevronLeft, ChevronRight
 } from "lucide-react"
 
 interface PrescriptionRecord {
